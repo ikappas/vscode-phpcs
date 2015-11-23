@@ -12,7 +12,13 @@ import {
 	ErrorMessageTracker
 } from "vscode-languageserver";
 
-import { exec, spawn } from "child_process";
+import {
+    exec, spawn, ChildProcess
+} from "child_process";
+
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 
 interface Settings {
 	enable: boolean;
@@ -45,6 +51,102 @@ interface PhpcsReportMessage {
 	fixable: boolean;
 }
 
+class PhpcsPathResolver {
+	rootPath: string;
+	phpcsPath: string;
+	constructor(rootPath: string) {
+		this.rootPath = rootPath;
+		this.phpcsPath = 'phpcs';
+	}
+	/**
+	 * Determine whether composer.json exists at the root path.
+	 */
+	hasComposerJson(): boolean {
+		try {
+			return fs.existsSync(path.join(this.rootPath, 'composer.json'));
+		} catch(exeption) {
+			return false;
+		}
+	}
+	/**
+	 * Determine whether composer.lock exists at the root path.
+	 */
+	hasComposerLock(): boolean {
+	   try {
+			return fs.existsSync(path.join(this.rootPath, 'composer.lock'));
+		} catch(exeption) {
+			return false;
+		}
+	}
+	/**
+	 * Determine whether phpcs is set as a composer dependency.
+	 */
+	hasComposerPhpcsDependency(): boolean {
+		// Safely load composer.lock
+		let dependencies = null;
+		try {
+			dependencies = JSON.parse(fs.readFileSync(path.join(this.rootPath, 'composer.lock'), 'utf8'));
+		} catch(exception) {
+			dependencies = {};
+		}
+
+		// Determine phpcs dependency.
+		let result = false;
+		let BreakException = {};
+		if (dependencies['packages'] && dependencies['packages-dev']) {
+			try {
+				[ dependencies['packages'], dependencies['packages-dev']].forEach(pkgs => {
+					let match = pkgs.filter(pkg => {
+						return pkg.name === 'squizlabs/php_codesniffer';
+					});
+					if (match.length !== 0) throw BreakException;
+				});
+			} catch(exception) {
+				if (exception === BreakException) {
+					result = true;
+				} else {
+					throw exception;
+				}
+			}
+		}
+		return result;
+	}
+	resolve(): string {
+		if (this.rootPath) {
+			// Determine whether composer.json exists in our workspace root.
+			let composerJson = path.join(this.rootPath, 'composer.json');
+			if (this.hasComposerJson()) {
+
+				// Determine whether composer is installed.
+				if (this.hasComposerLock()) {
+
+					// Determine whether vendor/bin/phcs exists only when project depends on phpcs.
+					if (this.hasComposerPhpcsDependency()) {
+						let extension = (os.platform() === "win32" || os.platform() === "win64" ) ? '.bat' : '';
+						let vendorPath = path.join(this.rootPath, 'vendor', 'bin', `phpcs${extension}` );
+						if (fs.existsSync(vendorPath)) {
+							this.phpcsPath = vendorPath;
+						} else {
+							throw {
+								name: 'phpcs',
+								message: `Composer phpcs dependency is configured but was not found under workspace/vendor/bin. You may need to update your dependencies using "composer update".`
+							};
+						}
+					}
+
+				} else {
+					throw {
+						name: 'phpcs',
+						message: `A composer configuration file was found at the root of your project but seems uninitialized. You may need to initialize your dependencies using "composer install".`
+					};
+				}
+			}
+		}
+
+		return this.phpcsPath;
+	}
+}
+
 let connection: IConnection = createConnection(process.stdin, process.stdout);
 let lib: any = null;
 let settings: Settings = null;
@@ -52,9 +154,10 @@ let documents: TextDocuments = new TextDocuments();
 let ready = false;
 let isValidating: { [index: string]: boolean } = {};
 let needsValidating: { [index: string]: ITextDocument } = {};
+let phpcsPath: string = null;
 
-function getDebugString(response: string): string {
-	return [settings.enable, settings.standard, response].join(" | ");
+function getDebugMessage(response: string): string {
+	return [settings.enable, settings.standard].join(" | ");
 }
 
 function isWhitespace(charCode: number) : boolean {
@@ -104,7 +207,6 @@ function getDiagnostic(document: ITextDocument, message: PhpcsReportMessage): Di
 		severity = DiagnosticSeverity.Warning;
 	}
 
-
 	let diagnostic: Diagnostic = {
 		range: {
 			start: { line, character: start },
@@ -117,46 +219,35 @@ function getDiagnostic(document: ITextDocument, message: PhpcsReportMessage): Di
 	return diagnostic;
 };
 
-function checkPhpcsVersion(): Thenable<InitializeResult | ResponseError<InitializeError>> {
-	return new Promise<InitializeResult | ResponseError<InitializeError>>((resolve, reject) => {
-		exec(`phpcs --version`, function(error, stdout, stderr) {
-			if (error) {
-				let errString = `Could not find phpcs: '${stderr.toString() }'`;
-				reject(new ResponseError<InitializeError>(99, errString, { retry: true }));
-			}
-			resolve({ capabilities: { textDocumentSync: documents.syncKind } });
-		});
-	});
-	// TODO: check whether phpcs is installed with composer.
-	// let rootFolder = params.rootPath;
-	// if (fs.exists(path.join(rootFolder, 'composer.json'))) {
-	// 	return new Promise<server.InitializeResult | server.ResponseError<server.InitializeError>>((resolve, reject) => {
-	// 		if (fs.exists(path.join(rootFolder, 'vendor', 'bin', 'phpcs.phar' ))) {
-	// 			resolve({ capabilities: { textDocumentSync: documents.syncKind } });
-	// 		}
-	// 		let errString = `Could not find phpcs. Please add the phpcs dependensy in composer.json and run composer update.`;
-	// 		reject(new server.ResponseError<server.InitializeError>(99, errString, { retry: true }));
-	// 	});
-	// } else {
-	// 	return new Promise<server.InitializeResult | server.ResponseError<server.InitializeError>>((resolve, reject) => {
-	// 		exec(`phpcs --version`, function(error, stdout, stderr) {
-	// 			if (error) {
-	// 				let errString = `Could not find phpcs: '${stderr.toString() }'`;
-	// 				reject(new server.ResponseError<server.InitializeError>(99, errString, { retry: true }));
-	// 			}
-	// 			resolve({ capabilities: { textDocumentSync: documents.syncKind } });
-	// 		});
-	// 	});
-	// }
-}
-
 documents.listen(connection);
 documents.onDidChangeContent((event) => {
 	validateSingle(event.document);
 });
 
 connection.onInitialize((params): Thenable<InitializeResult | ResponseError<InitializeError>> => {
-	return checkPhpcsVersion();
+	let rootPath = params.rootPath;
+	return new Promise<InitializeResult | ResponseError<InitializeError>>((resolve, reject) => {
+		try {
+			// Resolve the phpcs path.
+			let pathResolver = new PhpcsPathResolver(rootPath);
+			phpcsPath = pathResolver.resolve();
+
+			//reject(new ResponseError<InitializeError>(99, `PHPCS DEBUG: ${phpcsPath}`, { retry: true }));
+
+			// Determine whether we can execute phpcs.
+			connection.console.log(`phpcs: The path for phpcs resolved to "${phpcsPath}"`);
+			exec(`${phpcsPath} --version`, function(error, stdout, stderr) {
+				if (error) {
+					let message = 'phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer depency manager to install it in your project locally.';
+					reject(new ResponseError<InitializeError>(99, message, { retry: true }));
+				}
+				resolve({ capabilities: { textDocumentSync: documents.syncKind } });
+			});
+
+		} catch(exception) {
+			reject(new ResponseError<InitializeError>(99, exception.message, { retry: true }));
+		}
+	});
 });
 
 function validate(document: ITextDocument): void {
@@ -175,7 +266,7 @@ function validate(document: ITextDocument): void {
 		args.push( `--standard=${settings.standard}`)
 	}
 
-	let child = spawn("phpcs", args );
+	let child = spawn(phpcsPath, args );
 	let diagnostics: Diagnostic[] = [];
 	let response = "";
 
@@ -192,7 +283,7 @@ function validate(document: ITextDocument): void {
 		if (match = response.match(/^ERROR: the \"([a-zA-Z0-9'_-]+\s?)\" coding standard is not installed\./)) {
 			connection.window.showErrorMessage(`phpcs: The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.`);
 		} else {
-			connection.console.log(code + " | " + getDebugString(response));
+			connection.console.log(`phpcs: ${code} | ${getDebugMessage(response)}`);
 			let report = JSON.parse(response);
 			for (var filename in report.files) {
 				let file: PhpcsReportFile = report.files[filename];
@@ -207,11 +298,11 @@ function validate(document: ITextDocument): void {
 		let revalidateDocument = needsValidating[uri];
 
 		if (revalidateDocument) {
-			connection.console.log(`Revalidating ${uri}`);
+			connection.console.log(`phpcs: Revalidating ${uri}`);
 			delete needsValidating[uri];
 			validate(revalidateDocument);
 		} else {
-			connection.console.log(`Finished validating ${uri}`);
+			connection.console.log(`phpcs: Finished validating ${uri}`);
 		}
 	});
 }
@@ -225,7 +316,7 @@ function getMessage(err: any, document: ITextDocument): string {
 			result = result.substr(5);
 		}
 	} else {
-		result = `An unknown error occured while validating file: ${Files.uriToFilePath(document.uri) }`;
+		result = `phpcs: An unknown error occured while validating file: ${Files.uriToFilePath(document.uri) }`;
 	}
 	return result;
 }
