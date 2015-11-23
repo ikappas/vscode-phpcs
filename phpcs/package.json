@@ -1,7 +1,7 @@
 {
 	"name": "phpcs",
 	"description": "PHP CodeSniffer for Visual Studio Code",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"publisher": "ikappas",
 	"icon": "phpcs_icon.svg",
 	"galleryBanner": {
@@ -40,7 +40,7 @@
 				"phpcs.standard": {
 					"type": "string",
 					"default": null,
-					"description": "The coding standard to use by default. This can be overriden in a phpcs.xml in your workspace."
+					"description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
 				}
 			}
 		}
