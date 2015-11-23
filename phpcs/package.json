@@ -1,7 +1,7 @@
 {
 	"name": "phpcs",
 	"description": "PHP CodeSniffer for Visual Studio Code",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"publisher": "ikappas",
 	"icon": "phpcs_icon.svg",
 	"galleryBanner": {
