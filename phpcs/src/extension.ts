@@ -5,9 +5,12 @@
 'use strict';
 
 import * as path from 'path';
-
+import * as vscode from 'vscode';
+import * as proto from './protocol';
 import { workspace, Disposable, ExtensionContext } from 'vscode';
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions } from 'vscode-languageclient';
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, NotificationType } from 'vscode-languageclient';
+
+let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(context: ExtensionContext) {
 
@@ -22,7 +25,7 @@ export function activate(context: ExtensionContext) {
 	let serverOptions: ServerOptions = {
 		run : { module: serverModule },
 		debug: { module: serverModule, options: debugOptions }
-	}
+	};
 
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
@@ -34,10 +37,21 @@ export function activate(context: ExtensionContext) {
 			// Notify the server about file changes to 'phpcs.xml' files contain in the workspace
 			fileEvents: workspace.createFileSystemWatcher('**/phpcs.xml')
 		}
-	}
+	};
 
 	// Create the language client the client.
 	let client = new LanguageClient('PHP CodeSniffer Linter', serverOptions, clientOptions);
+
+	// Create the save handler.
+	let saveHandler = workspace.onDidSaveTextDocument(document => {
+		if (document.languageId != `php`) {
+			return;
+		}
+		let params: proto.TextDocumentIdentifier = { uri: document.uri.toString() };
+		client.sendNotification<proto.TextDocumentIdentifier>(proto.DidSaveTextDocumentNotification.type, params);
+	});
+
+	context.subscriptions.push(saveHandler);
 
 	// Create the settings monitor and start the monitor for the client.
 	let monitor = new SettingMonitor(client, 'phpcs.enable').start();
