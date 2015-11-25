@@ -25,3 +25,11 @@ export interface TextDocumentIdentifier {
 export namespace DidSaveTextDocumentNotification {
     export const type: NotificationType<TextDocumentIdentifier> = { get method() { return 'textDocument/didSave'; } };;
 }
+
+export namespace DidStartValidateTextDocumentNotification {
+    export const type: NotificationType<TextDocumentIdentifier> = { get method() { return 'textDocument/didStartValidate'; } };;
+}
+
+export namespace DidEndValidateTextDocumentNotification {
+    export const type: NotificationType<TextDocumentIdentifier> = { get method() { return 'textDocument/didEndValidate'; } };;
+}
