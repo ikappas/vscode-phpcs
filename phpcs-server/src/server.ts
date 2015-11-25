@@ -8,8 +8,9 @@ import {
 	ResponseError, RequestType, IRequestHandler, NotificationType, INotificationHandler,
 	InitializeParams, InitializeResult, InitializeError,
 	Diagnostic, DiagnosticSeverity, Position, Files,
-	TextDocuments, ITextDocument, TextDocumentSyncKind,
-	ErrorMessageTracker, DidChangeConfigurationParams
+	TextDocuments, ITextDocument, TextDocumentSyncKind, PublishDiagnosticsParams,
+	ErrorMessageTracker, DidChangeConfigurationParams, DidChangeWatchedFilesParams
+
 } from "vscode-languageserver";
 
 import {
@@ -19,7 +20,7 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { PhpcsDocuments } from "./documents";
+import { PhpcsDocuments, TextDocumentOpenEvent, TextDocumentSaveEvent  } from "./documents";
 import { PhpcsLinter, PhpcsSettings } from './linter';
 
 class PhpcsServer {
@@ -93,7 +94,7 @@ class PhpcsServer {
 	 * @param params The changed watched files parameters.
 	 * @return void
 	 */
-	private onDidChangeWatchedFiles(params: DidChageWatchedFilesParams) : void {
+	private onDidChangeWatchedFiles(params: DidChangeWatchedFilesParams) : void {
 		this.validateMany(this.documents.all());
 	}
 
@@ -147,21 +148,23 @@ class PhpcsServer {
 	 * @return void
 	 */
     public validateMany(documents: ITextDocument[]): void {
-		// let tracker = new ErrorMessageTracker();
+		let tracker = new ErrorMessageTracker();
+		let promises: Thenable<PublishDiagnosticsParams>[] = [];
+
 		documents.forEach(document => {
-			this.validateSingle(document);
-			// try {
-			// 	validate(document);
-			// } catch (err) {
-			// 	tracker.add(getExceptionMessage(err, document));
-			// }
-			// phpcs(phpcsPath, document, settings).then(diagnostics => {
-			// 	connection.sendDiagnostics({ uri: document.uri, diagnostics });
-			// }).catch(err => {
-			// 	tracker.add(getExceptionMessage(err, document));
-			// });
+			promises.push( this.linter.lint(document, this.settings).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]) => {
+				this.connection.console.log(`processing: ${document.uri}`);
+				let diagnostic = { uri: document.uri, diagnostics };
+				this.connection.sendDiagnostics(diagnostic);
+				return diagnostic;
+			}, (error) => {
+				tracker.add(this.getExceptionMessage(error, document));
+			}));
 		});
-		// tracker.sendErrors(connection);
+
+		Promise.all( promises ).then( results => {
+			tracker.sendErrors(this.connection);
+		});
     }
 
 	/**
