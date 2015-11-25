@@ -20,6 +20,8 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+
+import * as proto from './protocol';
 import { PhpcsDocuments, TextDocumentOpenEvent, TextDocumentSaveEvent  } from "./documents";
 import { PhpcsLinter, PhpcsSettings } from './linter';
 
@@ -134,13 +136,28 @@ class PhpcsServer {
 	 * @return void
 	 */
     public validateSingle(document: ITextDocument): void {
+		this.sendStartValidationNotification(document);
 		this.linter.lint(document, this.settings).then(diagnostics => {
+			this.sendEndValidationNotification(document);
 			this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
 		}, (error) => {
+			this.sendEndValidationNotification(document);
 			this.connection.window.showErrorMessage(this.getExceptionMessage(error, document));
 		});
     }
 
+	private sendStartValidationNotification(document:ITextDocument): void {
+		this.connection.sendNotification(
+			proto.DidStartValidateTextDocumentNotification.type,
+			{ uri: document.uri }
+		);
+	}
+	private sendEndValidationNotification(document:ITextDocument): void {
+		this.connection.sendNotification(
+			proto.DidEndValidateTextDocumentNotification.type,
+			{ uri: document.uri }
+		);
+	}
 	/**
 	 * Validate a list of text documents.
 	 *
@@ -152,12 +169,15 @@ class PhpcsServer {
 		let promises: Thenable<PublishDiagnosticsParams>[] = [];
 
 		documents.forEach(document => {
+			this.sendStartValidationNotification(document);
 			promises.push( this.linter.lint(document, this.settings).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]) => {
 				this.connection.console.log(`processing: ${document.uri}`);
+				this.sendEndValidationNotification(document);
 				let diagnostic = { uri: document.uri, diagnostics };
 				this.connection.sendDiagnostics(diagnostic);
 				return diagnostic;
 			}, (error) => {
+				this.sendEndValidationNotification(document);
 				tracker.add(this.getExceptionMessage(error, document));
 			}));
 		});
