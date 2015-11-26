@@ -256,8 +256,12 @@ export class PhpcsLinter {
 					let match = null;
 
 					// Determine whether we have an error and report it otherwise send back the diagnostics.
-					if (match = result.match(/^ERROR: the \"([a-zA-Z0-9'_-]+\s?)\" coding standard is not installed\./)) {
-						throw { message: `The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.` };
+					if (match = result.match(/^ERROR:(.*)/)) {
+						let error = match[1].trim();
+						if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
+							throw { message: `The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.` };
+						}
+						throw { message: error };
 					}
 
 					let diagnostics: Diagnostic[] = [];
