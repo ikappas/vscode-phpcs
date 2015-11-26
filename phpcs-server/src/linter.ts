@@ -193,7 +193,7 @@ export class PhpcsLinter {
 
 	private phpcsPath: string;
 
-	constructor( phpcsPath: string ) {
+	constructor(phpcsPath: string) {
 		this.phpcsPath = phpcsPath;
 	}
 
@@ -220,7 +220,7 @@ export class PhpcsLinter {
 		});
 	}
 
-	public lint(document: ITextDocument, settings: PhpcsSettings): Thenable<Diagnostic[]> {
+	public lint(document: ITextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
 		return new Promise<Diagnostic[]>((resolve, reject) => {
 
 			let filename = Files.uriToFilePath(document.uri)
@@ -231,7 +231,7 @@ export class PhpcsLinter {
 			args.push( filename );
 
 			let options = {
-				cwd: path.dirname(filename),
+				cwd: rootPath ? rootPath: path.dirname(filename),
 				env: process.env
 			};
 
