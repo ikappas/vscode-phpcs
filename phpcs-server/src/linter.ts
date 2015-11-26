@@ -193,7 +193,7 @@ export class PhpcsLinter {
 
 	private phpcsPath: string;
 
-	constructor( phpcsPath: string ) {
+	constructor(phpcsPath: string) {
 		this.phpcsPath = phpcsPath;
 	}
 
@@ -220,7 +220,7 @@ export class PhpcsLinter {
 		});
 	}
 
-	public lint(document: ITextDocument, settings: PhpcsSettings): Thenable<Diagnostic[]> {
+	public lint(document: ITextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
 		return new Promise<Diagnostic[]>((resolve, reject) => {
 
 			let filename = Files.uriToFilePath(document.uri)
@@ -231,7 +231,7 @@ export class PhpcsLinter {
 			args.push( filename );
 
 			let options = {
-				cwd: path.dirname(filename),
+				cwd: rootPath ? rootPath: path.dirname(filename),
 				env: process.env
 			};
 
@@ -249,17 +249,19 @@ export class PhpcsLinter {
 			phpcs.on("close", (code: string) => {
 				try {
 					result = result.trim();
-					// if (err && (<any>err).code == "ENOENT") {
-					// 	throw "The 'phpcs' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install."
-					// }
-
 					let match = null;
 
 					// Determine whether we have an error and report it otherwise send back the diagnostics.
-					if (match = result.match(/^ERROR:(.*)/)) {
+					if (match = result.match(/^ERROR:\s?(.*)/i)) {
 						let error = match[1].trim();
 						if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
 							throw { message: `The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.` };
+						}
+						throw { message: error };
+					} else if ( match = result.match(/^FATAL\s?ERROR:\s?(.*)/i)) {
+						let error = match[1].trim();
+						if (match = error.match(/^Uncaught exception '.*' with message '(.*)'/)) {
+							throw { message: match[1] };
 						}
 						throw { message: error };
 					}
@@ -278,37 +280,6 @@ export class PhpcsLinter {
 					reject(e);
 				}
 			});
-
-
-			// cp.execFile(this.phpcsPath, args, options, function (err, stdout, stderr) {
-			// 	try {
-			// 		if (err && (<any>err).code == "ENOENT") {
-			// 			throw "The 'phpcs' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install."
-			// 		}
-
-			// 		let response = stdout.toString().trim();
-			// 		let match = null;
-
-			// 		// Determine whether we have an error and report it otherwise send back the diagnostics.
-			// 		if (match = response.match(/^ERROR: the \"([a-zA-Z0-9'_-]+\s?)\" coding standard is not installed\./)) {
-			// 			throw { message: `The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.` };
-			// 			//vscode.window.showErrorMessage("phpcs: The \"" + match[1] + "\" coding standard set in your configuration is not installed. Please review your configuration an try again.");
-			// 		}
-
-			// 		let diagnostics: Diagnostic[] = [];
-			// 		let report = JSON.parse(response);
-			// 		for (var filename in report.files) {
-			// 			let file: PhpcsReportFile = report.files[filename];
-			// 			file.messages.forEach(message => {
-			// 				diagnostics.push(makeDiagnostic(document, message));
-			// 			});
-			// 		}
-			// 		resolve(diagnostics);
-			// 	}
-			// 	catch (e) {
-			// 		reject(e);
-			// 	}
-			// });
 		});
 	}
 }

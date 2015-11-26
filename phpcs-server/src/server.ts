@@ -32,6 +32,7 @@ class PhpcsServer {
     private ready: boolean = false;
     private documents: PhpcsDocuments;
     private linter: PhpcsLinter;
+	private rootPath: string;
 
 	/**
 	 * Class constructor.
@@ -66,8 +67,8 @@ class PhpcsServer {
 	 * @return A promise of initialization result or initialization error.
 	 */
     private onInitialize(params: InitializeParams) : Thenable<InitializeResult | ResponseError<InitializeError>> {
-		let rootPath = params.rootPath;
-		return PhpcsLinter.resolvePath(rootPath).then((linter): InitializeResult | ResponseError<InitializeError> => {
+		this.rootPath = params.rootPath;
+		return PhpcsLinter.resolvePath(this.rootPath).then((linter): InitializeResult | ResponseError<InitializeError> => {
 			this.linter = linter;
 			let result: InitializeResult = { capabilities: { textDocumentSync: this.documents.syncKind } };
 			return result
@@ -137,7 +138,7 @@ class PhpcsServer {
 	 */
     public validateSingle(document: ITextDocument): void {
 		this.sendStartValidationNotification(document);
-		this.linter.lint(document, this.settings).then(diagnostics => {
+		this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
 			this.sendEndValidationNotification(document);
 			this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
 		}, (error) => {
@@ -170,7 +171,7 @@ class PhpcsServer {
 
 		documents.forEach(document => {
 			this.sendStartValidationNotification(document);
-			promises.push( this.linter.lint(document, this.settings).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]) => {
+			promises.push( this.linter.lint(document, this.settings, this.rootPath).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]) => {
 				this.connection.console.log(`processing: ${document.uri}`);
 				this.sendEndValidationNotification(document);
 				let diagnostic = { uri: document.uri, diagnostics };

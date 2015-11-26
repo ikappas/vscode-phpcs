@@ -9,7 +9,7 @@ Before using this plugin, you must ensure that `phpcs` is installed on your syst
 
 Once phpcs is installed, you can proceed to install the vscode-phpcs plugin if it is not yet installed.
 
-> This plugin will detect whether your project has been set up to use phpcs via composer and use the project specific `phpcs` over the system-wide installation of `phpcs` automatically.
+> ** NOTE: ** This plugin will detect whether your project has been set up to use phpcs via composer and use the project specific `phpcs` over the system-wide installation of `phpcs` automatically.
 
 ### System-wide Installation
 The `phpcs` linter can be installed in your system using the PHP Extension and Application Repository (PEAR).
@@ -46,19 +46,79 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 There are various options that can be configured by making changes to your user or workspace preferences.
 
 ### **phpcs.enable**
-This setting controls whether phpcs is enabled and is optional.
-
-> **Default:** true
+[ Optional | **Default**: `true` ]
+This setting controls whether `phpcs` linting is enabled.
 
 ### **phpcs.standard**
-This setting controls the coding standard used by `phpcs` and is optional. You may specify the name or path of the coding standard to use.
+[ Optional | **Default:** `null` ]
+This setting controls the coding standard used by `phpcs`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
 
-The default behavior of this setting is to use the standard set in the `phpcs` global configuration by the following command:
-```
-phpcs --config-set default_standard <value>
-```
+> ** NOTE: ** While using composer dependency manager over global installation make sure you use the phpcs commands under your project scope !
 
-> **Default:** null
+The following values are applicable:
+
+1. This setting can be set to `null`, which is the default behaviour and uses the `default_standard` when set in the `phpcs` configuration or fallback to the `Pear` coding standard.
+	```
+	{
+	 	"phpcs.standard": null
+	}
+	```
+	You may set the `default_standard` used by phpcs using the following command:
+	```
+	phpcs --config-set default_standard <value>
+	```
+	or when using composer dependency manager from the root of your project issue the following command:
+	```
+	./vendor/bin/phpcs --config-set default_standard <value>
+	```
+
+2. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
+	```
+	{
+	 	"phpcs.standard": "PSR2"
+	}
+	```
+
+3. The setting can me set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
+	```
+	{
+	 	"phpcs.standard": "WordPress"
+	}
+	```
+	After you install the custom coding standard, you can make it available to phpcs by issuing the following command:
+	```
+	phpcs --config-set installed_paths <path/to/custom/coding/standard>
+	```
+	or when using composer dependency manager from the root of your project issue the following command:
+	```
+	./vendor/bin/phpcs --config-set installed_paths <path/to/custom/coding/standard>
+	```
+
+4. The setting can be set to the absolute path to a custom coding standard:
+	```
+	{
+	 	"phpcs.standard": "/path/to/coding/standard"
+	}
+	```
+	or you can use the path to a custom rulset:
+	```
+	{
+	 	"phpcs.standard": "/path/to/project/phpcs.xml"
+	}
+	```
+5. The setting can be set to your workspace relative path to a custom coding standard:
+
+	```
+	{
+	 	"phpcs.standard": "./vendor/path/to/coding/standard"
+	}
+	```
+	or you can use the path to your project's custom rulset:
+	```
+	{
+	 	"phpcs.standard": "./phpcs.xml"
+	}
+	```
 
 ## Acknowledgements
 The extension architecture is based off of the [Language Server Node Example](https://github.com/Microsoft/vscode-languageserver-node-example).
