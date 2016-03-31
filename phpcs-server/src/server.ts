@@ -20,6 +20,7 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import * as url from "url";
 
 import * as proto from './protocol';
 import { PhpcsDocuments, TextDocumentOpenEvent, TextDocumentSaveEvent  } from "./documents";
@@ -137,6 +138,13 @@ class PhpcsServer {
 	 * @return void
 	 */
     public validateSingle(document: ITextDocument): void {
+        // ignore inmemory document
+        const docUrl = url.parse(document.uri);
+        if (docUrl.protocol == "inmemory:") {
+            // Now, don't support inmemory file
+            return;
+        }
+        
 		this.sendStartValidationNotification(document);
 		this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
 			this.sendEndValidationNotification(document);
