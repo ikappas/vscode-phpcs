@@ -20,7 +20,7 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-
+import * as url from "url";
 import * as proto from './protocol';
 import { PhpcsDocuments, TextDocumentOpenEvent, TextDocumentSaveEvent  } from "./documents";
 import { PhpcsLinter, PhpcsSettings } from './linter';
@@ -137,14 +137,19 @@ class PhpcsServer {
 	 * @return void
 	 */
     public validateSingle(document: ITextDocument): void {
-		this.sendStartValidationNotification(document);
-		this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
-			this.sendEndValidationNotification(document);
-			this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
-		}, (error) => {
-			this.sendEndValidationNotification(document);
-			this.connection.window.showErrorMessage(this.getExceptionMessage(error, document));
-		});
+		let docUrl = url.parse(document.uri);
+
+		// Only process file documents.
+		if (docUrl.protocol == "file:") {
+			this.sendStartValidationNotification(document);
+			this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
+				this.sendEndValidationNotification(document);
+				this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
+			}, (error) => {
+				this.sendEndValidationNotification(document);
+				this.connection.window.showErrorMessage(this.getExceptionMessage(error, document));
+			});
+		}
     }
 
 	private sendStartValidationNotification(document:ITextDocument): void {
