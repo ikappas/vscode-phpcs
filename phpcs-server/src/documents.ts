@@ -5,32 +5,111 @@
 
 import {
 	ITextDocument, IConnection, TextDocumentSyncKind, TextDocumentContentChangeEvent,
-	DidOpenTextDocumentParams, DidChangeTextDocumentParams, TextDocumentIdentifier
+	DidOpenTextDocumentParams, DidChangeTextDocumentParams, TextDocumentIdentifier,
+	Position
 } from "vscode-languageserver";
 
 import { DidSaveTextDocumentNotification } from './protocol';
 import { Event, Emitter } from './utils/events';
 
-class TextDocument implements ITextDocument {
+class FullTextDocument implements ITextDocument {
 
 	private _uri: string;
+	private _languageId: string;
+	private _version: number;
 	private _content: string;
+	private _lineOffsets: number[];
 
-	public constructor(uri: string, content: string) {
+	public constructor(uri: string, languageId: string, version: number, content: string) {
 		this._uri = uri;
+		this._languageId = languageId;
+		this._version = version;
 		this._content = content;
+		this._lineOffsets = null;
 	}
 
 	public get uri(): string {
 		return this._uri;
 	}
 
+	public get languageId(): string {
+		return this._languageId;
+	}
+
+	public get version(): number {
+		return this._version;
+	}
+
 	public getText(): string {
 		return this._content;
 	}
 
-	public update(event: TextDocumentContentChangeEvent): void {
+	public update(event: TextDocumentContentChangeEvent, version: number): void {
 		this._content = event.text;
+		this._version = version;
+		this._lineOffsets = null;
+	}
+
+	private getLineOffsets() : number[] {
+		if (this._lineOffsets === null) {
+			let lineOffsets: number[] = [];
+			let text = this._content;
+			let isLineStart = true;
+			for (let i = 0; i < text.length; i++) {
+				if (isLineStart) {
+					lineOffsets.push(i);
+					isLineStart = false;
+				}
+				let ch = text.charAt(i);
+				isLineStart = (ch === '\r' || ch === '\n');
+				if (ch === '\r' && i + 1 < text.length && text.charAt(i+1) === '\n') {
+					i++;
+				}
+			}
+			if (isLineStart && text.length > 0) {
+				lineOffsets.push(text.length);
+			}
+			this._lineOffsets = lineOffsets;
+		}
+		return this._lineOffsets;
+	}
+
+	public positionAt(offset:number) {
+		offset = Math.max(Math.min(offset, this._content.length), 0);
+
+		let lineOffsets = this.getLineOffsets();
+		let low = 0, high = lineOffsets.length;
+		if (high === 0) {
+			return Position.create(0, offset);
+		}
+		while (low < high) {
+			let mid = Math.floor((low + high) / 2);
+			if (lineOffsets[mid] > offset) {
+				high = mid;
+			} else {
+				low = mid + 1;
+			}
+		}
+		// low is the least x for which the line offset is larger than the current offset
+		// or array.length if no line offset is larger than the current offset
+		let line = low - 1;
+		return Position.create(line, offset - lineOffsets[line]);
+	}
+
+	public offsetAt(position: Position) {
+		let lineOffsets = this.getLineOffsets();
+		if (position.line >= lineOffsets.length) {
+			return this._content.length;
+		} else if (position.line < 0) {
+			return 0;
+		}
+		let lineOffset = lineOffsets[position.line];
+		let nextLineOffset = (position.line + 1 < lineOffsets.length) ? lineOffsets[position.line + 1] : this._content.length;
+		return Math.max(Math.min(lineOffset + position.character, nextLineOffset), lineOffset);
+	}
+
+	public get lineCount() {
+		return this.getLineOffsets().length;
 	}
 }
 
@@ -83,7 +162,7 @@ export interface TextDocumentCloseEvent {
  */
 export class PhpcsDocuments {
 
-	private _documents : { [uri: string]: TextDocument };
+	private _documents : { [uri: string]: FullTextDocument };
 	private _onDidOpenDocument: Emitter<TextDocumentOpenEvent>;
 	private _onDidChangeContent: Emitter<TextDocumentChangeEvent>;
 	private _onDidSaveDocument: Emitter<TextDocumentSaveEvent>;
@@ -178,7 +257,7 @@ export class PhpcsDocuments {
 	public listen(connection: IConnection): void {
 		(<IConnectionState><any>connection).__textDocumentSync = TextDocumentSyncKind.Full;
 		connection.onDidOpenTextDocument((event: DidOpenTextDocumentParams) => {
-			let document = new TextDocument(event.uri, event.text);
+			let document = new FullTextDocument(event.uri, event.languageId, -1, event.text);
 			this._documents[event.uri] = document;
 			this._onDidOpenDocument.fire({ document });
 			this._onDidChangeContent.fire({ document });
@@ -188,7 +267,7 @@ export class PhpcsDocuments {
 			let last: TextDocumentContentChangeEvent = changes.length > 0 ? changes[changes.length - 1] : null;
 			if (last) {
 				let document = this._documents[event.uri];
-				document.update(last);
+				document.update(last, -1);
 				this._onDidChangeContent.fire({ document });
 			}
 		});
