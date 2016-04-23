@@ -1,17 +1,26 @@
 {
 	"name": "phpcs-server",
 	"description": "PHP Code Sniffer server.",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"author": "Ioannis Kappas",
+	"publisher": "ikappas",
 	"license": "MIT",
 	"engines": {
 		"node": "*"
 	},
+	"homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ikappas/vscode-phpcs.git"
+	},
+	"bugs": {
+		"url": "https://github.com/ikappas/vscode-phpcs/issues"
+	},
 	"dependencies": {
-		"vscode-languageserver": "0.10.x"
+		"vscode-languageserver": "^1.4.1"
 	},
 	"devDependencies": {
-		"typescript": "^1.6.2"
+		"typescript": "^1.8.9"
 	},
 	"scripts": {
 		"compile": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc -p .",
