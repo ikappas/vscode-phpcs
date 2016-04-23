@@ -7,7 +7,7 @@
 			"request": "attach",
 			"port": 6004,
 			"sourceMaps": true,
-			"outDir": "../phpcs/server"
+			"outDir": "${workspaceRoot}/../phpcs/server"
 		}
 	]
 }
