@@ -4,13 +4,13 @@
 "use strict";
 
 import {
-	createConnection, IConnection,
+	createConnection, IConnection, IPCMessageReader, IPCMessageWriter,
 	ResponseError, RequestType, IRequestHandler, NotificationType, INotificationHandler,
 	InitializeParams, InitializeResult, InitializeError,
 	Diagnostic, DiagnosticSeverity, Position, Files,
-	TextDocuments, ITextDocument, TextDocumentSyncKind, PublishDiagnosticsParams,
-	ErrorMessageTracker, DidChangeConfigurationParams, DidChangeWatchedFilesParams
-
+	ITextDocument, TextDocumentSyncKind, PublishDiagnosticsParams,
+	ErrorMessageTracker, DidChangeConfigurationParams, DidChangeWatchedFilesParams,
+	TextDocumentIdentifier
 } from "vscode-languageserver";
 
 import {
@@ -33,6 +33,7 @@ class PhpcsServer {
     private documents: PhpcsDocuments;
     private linter: PhpcsLinter;
 	private rootPath: string;
+	private _validating: { [uri: string]: ITextDocument };
 
 	/**
 	 * Class constructor.
@@ -40,7 +41,8 @@ class PhpcsServer {
 	 * @return A new instance of the server.
 	 */
     constructor() {
-        this.connection = createConnection(process.stdin, process.stdout);
+		this._validating = Object.create(null);
+        this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
         this.documents = new PhpcsDocuments();
         this.documents.listen(this.connection);
         this.connection.onInitialize((params) => {
@@ -86,7 +88,7 @@ class PhpcsServer {
 	 * @return void
 	 */
     private onDidChangeConfiguration(params: DidChangeConfigurationParams): void {
-        this.settings = params.settings["phpcs"];
+        this.settings = params.settings.phpcs;
         this.ready = true;
         this.validateMany(this.documents.all());
     }
@@ -140,12 +142,15 @@ class PhpcsServer {
 		let docUrl = url.parse(document.uri);
 
 		// Only process file documents.
-		if (docUrl.protocol == "file:") {
+		if (docUrl.protocol == "file:" && this._validating[document.uri] === undefined ) {
+			this._validating[ document.uri ] = document;
 			this.sendStartValidationNotification(document);
 			this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
+				delete this._validating[document.uri];
 				this.sendEndValidationNotification(document);
 				this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
 			}, (error) => {
+				delete this._validating[document.uri];
 				this.sendEndValidationNotification(document);
 				this.connection.window.showErrorMessage(this.getExceptionMessage(error, document));
 			});
@@ -155,13 +160,13 @@ class PhpcsServer {
 	private sendStartValidationNotification(document:ITextDocument): void {
 		this.connection.sendNotification(
 			proto.DidStartValidateTextDocumentNotification.type,
-			{ uri: document.uri }
+			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
 		);
 	}
 	private sendEndValidationNotification(document:ITextDocument): void {
 		this.connection.sendNotification(
 			proto.DidEndValidateTextDocumentNotification.type,
-			{ uri: document.uri }
+			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
 		);
 	}
 	/**

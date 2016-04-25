@@ -5,7 +5,7 @@
 			"name": "Attach",
 			"type": "node",
 			"request": "attach",
-			"port": 6004,
+			"port": 6199,
 			"sourceMaps": true,
 			"outDir": "${workspaceRoot}/../phpcs/server"
 		}

@@ -272,7 +272,7 @@ export class PhpcsDocuments {
 			}
 		});
 	 	connection.onNotification(DidSaveTextDocumentNotification.type, (event) => {
-			let document = this._documents[event.uri];
+			let document = this._documents[event.textDocument.uri];
 			this._onDidSaveDocument.fire({ document });
 		});
 		connection.onDidCloseTextDocument((event: TextDocumentIdentifier) => {

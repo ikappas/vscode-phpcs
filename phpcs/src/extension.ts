@@ -11,7 +11,7 @@ import { PhpcsStatus } from "./status";
 
 // import { workspace, Disposable, ExtensionContext } from "vscode";
 import { window, commands, workspace, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument } from "vscode";
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, NotificationType } from "vscode-languageclient";
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, NotificationType, TransportKind, TextDocumentIdentifier } from "vscode-languageclient";
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -21,13 +21,13 @@ export function activate(context: ExtensionContext) {
 	let serverModule = context.asAbsolutePath(path.join("server", "server.js"));
 
 	// The debug options for the server
-	let debugOptions = { execArgv: ["--nolazy", "--debug=6004"] };
+	let debugOptions = { execArgv: ["--nolazy", "--debug=6199"] };
 
 	// If the extension is launch in debug mode the debug server options are use
 	// Otherwise the run options are used
 	let serverOptions: ServerOptions = {
-		run : { module: serverModule },
-		debug: { module: serverModule, options: debugOptions }
+		run : { module: serverModule, transport: TransportKind.ipc },
+		debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
 	};
 
 	// Options to control the language client
@@ -50,16 +50,16 @@ export function activate(context: ExtensionContext) {
 		if (document.languageId != `php`) {
 			return;
 		}
-		let params: proto.TextDocumentIdentifier = { uri: document.uri.toString() };
-		client.sendNotification<proto.TextDocumentIdentifier>(proto.DidSaveTextDocumentNotification.type, params);
+		let params: proto.DidSaveTextDocumentNotificationParams = { textDocument: TextDocumentIdentifier.create( document.uri.toString() ) };
+		client.sendNotification<proto.DidSaveTextDocumentNotificationParams>(proto.DidSaveTextDocumentNotification.type, params);
 	});
 
 	let status = new PhpcsStatus();
-	client.onNotification( proto.DidStartValidateTextDocumentNotification.type, (document) => {
-		status.startProcessing(document.uri);
+	client.onNotification( proto.DidStartValidateTextDocumentNotification.type, (event) => {
+		status.startProcessing(event.textDocument.uri);
 	});
-	client.onNotification( proto.DidEndValidateTextDocumentNotification.type, (document) => {
-		status.endProcessing(document.uri);
+	client.onNotification( proto.DidEndValidateTextDocumentNotification.type, (event) => {
+		status.endProcessing(event.textDocument.uri);
 	});
 
 	context.subscriptions.push(saveHandler);
