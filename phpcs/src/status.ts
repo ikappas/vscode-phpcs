@@ -2,9 +2,9 @@
  * Copyright (c) Ioannis Kappas. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-'use strict';
+"use strict";
 
-import { window, StatusBarAlignment, StatusBarItem, OutputChannel } from 'vscode';
+import { window, StatusBarAlignment, StatusBarItem, OutputChannel } from "vscode";
 
 class Timer {
 
@@ -141,7 +141,7 @@ export class PhpcsStatus {
 	}
 	private getOutputChannel(): OutputChannel {
 		if (!this.outputChannel) {
-			this.outputChannel = window.createOutputChannel('phpcs');
+			this.outputChannel = window.createOutputChannel("phpcs");
 		}
 		return this.outputChannel;
 	}

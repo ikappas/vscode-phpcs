@@ -21,9 +21,9 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as url from "url";
-import * as proto from './protocol';
+import * as proto from "./protocol";
 import { PhpcsDocuments, TextDocumentOpenEvent, TextDocumentSaveEvent  } from "./documents";
-import { PhpcsLinter, PhpcsSettings } from './linter';
+import { PhpcsLinter, PhpcsSettings } from "./linter";
 
 class PhpcsServer {
 
@@ -57,7 +57,7 @@ class PhpcsServer {
         });
         this.documents.onDidSaveDocument((event) => {
             this.onDidSaveDocument(event);
-        })
+        });
     }
 
 	/**
@@ -71,7 +71,7 @@ class PhpcsServer {
 		return PhpcsLinter.resolvePath(this.rootPath).then((linter): InitializeResult | ResponseError<InitializeError> => {
 			this.linter = linter;
 			let result: InitializeResult = { capabilities: { textDocumentSync: this.documents.syncKind } };
-			return result
+			return result;
 		}, (error) => {
 			return Promise.reject(
 				new ResponseError<InitializeError>(99,
