@@ -228,13 +228,30 @@ export class PhpcsLinter {
 		if (settings.standard) {
 			lintArgs.push(`--standard=${settings.standard}`);
 		}
-
-        let cmd: string = `${lintPath} ${lintArgs.join(" ")} "${filePath}"`;
+		lintArgs.push( filePath );
 
 		return new Promise<Diagnostic[]>((resolve, reject) => {
- 			var dir = path.dirname(filePath);
-            cp.exec(cmd,{cwd:dir}, (error, stdout, stderr) => {
-				let result = stdout.toString();
+
+			let options = {
+				cwd: rootPath ? rootPath: path.dirname(filePath),
+				env: process.env,
+				// shell: true,
+				detached: true,
+				stdio: [ "ignore", "pipe", "pipe" ]
+			};
+
+			let result = "";
+			let phpcs = cp.spawn( lintPath, lintArgs, options );
+
+			phpcs.stderr.on("data", (buffer: Buffer) => {
+				result += buffer.toString();
+			});
+
+			phpcs.stdout.on("data", (buffer: Buffer) => {
+				result += buffer.toString();
+			});
+
+			phpcs.on("close", (code: string) => {
 				try {
 					result = result.trim();
 					let match = null;
@@ -269,66 +286,5 @@ export class PhpcsLinter {
 				}
 			});
 		});
-
-		// return new Promise<Diagnostic[]>((resolve, reject) => {
-
-		// 	let filename = Files.uriToFilePath(document.uri);
-		// 	let args = [ "--report=json" ];
-		// 	if (settings.standard) {
-		// 		args.push(`--standard=${settings.standard}`);
-		// 	}
-		// 	args.push( filename );
-
-		// 	let options = {
-		// 		cwd: rootPath ? rootPath: path.dirname(filename),
-		// 		env: process.env,
-		// 	};
-
-		// 	let result = "";
-		// 	let phpcs = cp.spawn( phpcsPath, args, options );
-
-		// 	phpcs.stderr.on("data", (buffer: Buffer) => {
-		// 		result += buffer.toString();
-		// 	});
-
-		// 	phpcs.stdout.on("data", (buffer: Buffer) => {
-		// 		result += buffer.toString();
-		// 	});
-
-		// 	phpcs.on("close", (code: string) => {
-		// 		try {
-		// 			result = result.trim();
-		// 			let match = null;
-
-		// 			// Determine whether we have an error and report it otherwise send back the diagnostics.
-		// 			if (match = result.match(/^ERROR:\s?(.*)/i)) {
-		// 				let error = match[1].trim();
-		// 				if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
-		// 					throw { message: `The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.` };
-		// 				}
-		// 				throw { message: error };
-		// 			} else if ( match = result.match(/^FATAL\s?ERROR:\s?(.*)/i)) {
-		// 				let error = match[1].trim();
-		// 				if (match = error.match(/^Uncaught exception '.*' with message '(.*)'/)) {
-		// 					throw { message: match[1] };
-		// 				}
-		// 				throw { message: error };
-		// 			}
-
-		// 			let diagnostics: Diagnostic[] = [];
-		// 			let report = JSON.parse(result);
-		// 			for (var filename in report.files) {
-		// 				let file: PhpcsReportFile = report.files[filename];
-		// 				file.messages.forEach(message => {
-		// 					diagnostics.push(makeDiagnostic(document, message));
-		// 				});
-		// 			}
-		// 			resolve(diagnostics);
-		// 		}
-		// 		catch (e) {
-		// 			reject(e);
-		// 		}
-		// 	});
-		// });
 	}
 }
