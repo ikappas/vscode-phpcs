@@ -4,21 +4,16 @@
 "use strict";
 
 import {
-	createConnection, IConnection, IPCMessageReader, IPCMessageWriter,
+	IPCMessageReader, IPCMessageWriter,
+	createConnection, IConnection, TextDocumentSyncKind,
 	ResponseError, RequestType, IRequestHandler, NotificationType, INotificationHandler,
 	InitializeParams, InitializeResult, InitializeError,
 	Diagnostic, DiagnosticSeverity, Position, Files,
-	ITextDocument, TextDocumentSyncKind, PublishDiagnosticsParams,
+	ITextDocument, PublishDiagnosticsParams,
 	ErrorMessageTracker, DidChangeConfigurationParams, DidChangeWatchedFilesParams,
 	TextDocumentIdentifier
 } from "vscode-languageserver";
 
-import {
-    exec, spawn, ChildProcess
-} from "child_process";
-
-import * as fs from "fs";
-import * as path from "path";
 import * as os from "os";
 import * as url from "url";
 import * as proto from "./protocol";

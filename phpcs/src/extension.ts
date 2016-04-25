@@ -9,11 +9,8 @@ import * as vscode from "vscode";
 import * as proto from "./protocol";
 import { PhpcsStatus } from "./status";
 
-// import { workspace, Disposable, ExtensionContext } from "vscode";
-import { window, commands, workspace, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument } from "vscode";
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, NotificationType, TransportKind, TextDocumentIdentifier } from "vscode-languageclient";
-
-let diagnosticCollection: vscode.DiagnosticCollection;
+import { workspace, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem } from "vscode";
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, TextDocumentIdentifier } from "vscode-languageclient";
 
 export function activate(context: ExtensionContext) {
 
