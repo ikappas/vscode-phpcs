@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-'use strict';
+"use strict";
 
 export interface IDisposable {
 	dispose(): void;
@@ -43,7 +43,7 @@ export class Disposable implements IDisposable {
 	 * Dispose this object.
 	 */
 	dispose(): any {
-		if (typeof this._callOnDispose === 'function') {
+		if (typeof this._callOnDispose === "function") {
 			this._callOnDispose();
 			this._callOnDispose = undefined;
 		}
@@ -104,7 +104,7 @@ export class CallbackList {
 		}
 
 		if (foundCallbackWithDifferentContext) {
-			throw new Error('When adding a listener with a context, you should remove it with the same context');
+			throw new Error("When adding a listener with a context, you should remove it with the same context");
 		}
 	}
 
@@ -144,7 +144,7 @@ export interface EmitterOptions {
 
 export class Emitter<T> {
 
-	private static _noop = function () { };
+	private static _noop = function () {};
 
 	private _event: Event<T>;
 	private _callbacks: CallbackList;

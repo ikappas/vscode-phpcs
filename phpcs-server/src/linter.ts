@@ -2,17 +2,17 @@
  * Copyright (c) Ioannis Kappas. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-'use strict';
+"use strict";
 
 import {
 	ITextDocument, Diagnostic, DiagnosticSeverity, Files
 } from "vscode-languageserver";
 
-import cp = require('child_process');
-import path = require('path');
-import fs = require('fs');
-import os = require('os');
-import cc = require('./utils/charcode');
+import cp = require("child_process");
+import path = require("path");
+import fs = require("fs");
+import os = require("os");
+import cc = require("./utils/charcode");
 
 interface PhpcsReport {
 	totals: PhpcsReportTotals;
@@ -46,18 +46,21 @@ export interface PhpcsSettings {
 }
 
 export class PhpcsPathResolver {
-	rootPath: string;
-	phpcsPath: string;
+	private rootPath: string;
+	private phpcsPath: string;
+	private phpcsExecutable : string;
+
 	constructor(rootPath: string) {
 		this.rootPath = rootPath;
-		this.phpcsPath = 'phpcs';
+		let extension = /^win/.test(process.platform) ? ".bat" : "";
+		this.phpcsExecutable = `phpcs${extension}`;
 	}
 	/**
 	 * Determine whether composer.json exists at the root path.
 	 */
 	hasComposerJson(): boolean {
 		try {
-			return fs.existsSync(path.join(this.rootPath, 'composer.json'));
+			return fs.existsSync(path.join(this.rootPath, "composer.json"));
 		} catch(exeption) {
 			return false;
 		}
@@ -67,7 +70,7 @@ export class PhpcsPathResolver {
 	 */
 	hasComposerLock(): boolean {
 	   try {
-			return fs.existsSync(path.join(this.rootPath, 'composer.lock'));
+			return fs.existsSync(path.join(this.rootPath, "composer.lock"));
 		} catch(exeption) {
 			return false;
 		}
@@ -79,7 +82,7 @@ export class PhpcsPathResolver {
 		// Safely load composer.lock
 		let dependencies = null;
 		try {
-			dependencies = JSON.parse(fs.readFileSync(path.join(this.rootPath, 'composer.lock'), 'utf8'));
+			dependencies = JSON.parse(fs.readFileSync(path.join(this.rootPath, "composer.lock"), "utf8"));
 		} catch(exception) {
 			dependencies = {};
 		}
@@ -87,13 +90,15 @@ export class PhpcsPathResolver {
 		// Determine phpcs dependency.
 		let result = false;
 		let BreakException = {};
-		if (dependencies['packages'] && dependencies['packages-dev']) {
+		if (dependencies["packages"] && dependencies["packages-dev"]) {
 			try {
-				[ dependencies['packages'], dependencies['packages-dev']].forEach(pkgs => {
+				[ dependencies["packages"], dependencies["packages-dev"]].forEach(pkgs => {
 					let match = pkgs.filter(pkg => {
-						return pkg.name === 'squizlabs/php_codesniffer';
+						return pkg.name === "squizlabs/php_codesniffer";
 					});
-					if (match.length !== 0) throw BreakException;
+					if (match.length !== 0) {
+						throw BreakException;
+					}
 				});
 			} catch(exception) {
 				if (exception === BreakException) {
@@ -106,6 +111,18 @@ export class PhpcsPathResolver {
 		return result;
 	}
 	resolve(): string {
+		this.phpcsPath = this.phpcsExecutable;
+
+		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
+		let globalPaths = process.env.PATH.split(pathSeparator);
+		globalPaths.forEach(globalPath => {
+			let testPath = path.join( globalPath, this.phpcsExecutable );
+			if (fs.existsSync(testPath)) {
+				this.phpcsPath = testPath;
+				return false;
+			}
+		});
+
 		if (this.rootPath) {
 			// Determine whether composer.json exists in our workspace root.
 			if (this.hasComposerJson()) {
@@ -115,8 +132,7 @@ export class PhpcsPathResolver {
 
 					// Determine whether vendor/bin/phcs exists only when project depends on phpcs.
 					if (this.hasComposerPhpcsDependency()) {
-						let extension = (os.platform() === "win32" || os.platform() === "win64" ) ? '.bat' : '';
-						let vendorPath = path.join(this.rootPath, 'vendor', 'bin', `phpcs${extension}` );
+						let vendorPath = path.join(this.rootPath, "vendor", "bin", this.phpcsExecutable );
 						if (fs.existsSync(vendorPath)) {
 							this.phpcsPath = vendorPath;
 						} else {
@@ -129,7 +145,6 @@ export class PhpcsPathResolver {
 				}
 			}
 		}
-
 		return this.phpcsPath;
 	}
 }
@@ -173,7 +188,7 @@ function makeDiagnostic(document: ITextDocument, message: PhpcsReportMessage): D
 
 	// Process diagnostic severity.
 	let severity = DiagnosticSeverity.Error;
-	if (message.type === 'WARNING') {
+	if (message.type === "WARNING") {
 		severity = DiagnosticSeverity.Warning;
 	}
 
@@ -209,7 +224,7 @@ export class PhpcsLinter {
 				cp.exec(`${phpcsPath} --version`, function(error, stdout, stderr) {
 
 					if (error) {
-						reject('phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer depency manager to install it in your project locally.');
+						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer depency manager to install it in your project locally.");
 					}
 
 					resolve(new PhpcsLinter(phpcsPath));
@@ -221,22 +236,41 @@ export class PhpcsLinter {
 	}
 
 	public lint(document: ITextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
-		return new Promise<Diagnostic[]>((resolve, reject) => {
+		let filePath = Files.uriToFilePath(document.uri);
+		let lintPath = this.phpcsPath;
+		let lintArgs = [ "--report=json" ];
+		if (settings.standard) {
+			lintArgs.push(`--standard=${settings.standard}`);
+		}
+		lintArgs.push( filePath );
 
-			let filename = Files.uriToFilePath(document.uri)
-			let args = [ '--report=json', filename ];
-			if (settings.standard ) {
-				args.push( `--standard=${settings.standard}`)
-			}
-			args.push( filename );
+		return new Promise<Diagnostic[]>((resolve, reject) => {
+			let file = null;
+			let args = null;
+			let phpcs = null;
 
 			let options = {
-				cwd: rootPath ? rootPath: path.dirname(filename),
-				env: process.env
+				cwd: rootPath ? rootPath: path.dirname(filePath),
+				stdio: [ "ignore", "pipe", "pipe" ],
+				env: process.env,
+				encoding: "utf8",
+				timeout: 0,
+				maxBuffer: `${1024 * 1024}`,
+				detached: true,
 			};
 
+			if ( /^win/.test(process.platform) ) {
+				file = process.env.comspec || "cmd.exe";
+				let command = `${lintPath} ${lintArgs.join(" ")}`;
+				args = ["/s", "/c", command];
+				phpcs = cp.execFile( file, args, options );
+			} else {
+				file = lintPath;
+				args = lintArgs;
+				phpcs = cp.spawn( file, args, options );
+			}
+
 			let result = "";
-			let phpcs = cp.spawn( this.phpcsPath, args, options );
 
 			phpcs.stderr.on("data", (buffer: Buffer) => {
 				result += buffer.toString();

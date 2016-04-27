@@ -9,8 +9,8 @@ import {
 	Position
 } from "vscode-languageserver";
 
-import { DidSaveTextDocumentNotification } from './protocol';
-import { Event, Emitter } from './utils/events';
+import { DidSaveTextDocumentNotification } from "./protocol";
+import { Event, Emitter } from "./utils/events";
 
 class FullTextDocument implements ITextDocument {
 
@@ -61,8 +61,8 @@ class FullTextDocument implements ITextDocument {
 					isLineStart = false;
 				}
 				let ch = text.charAt(i);
-				isLineStart = (ch === '\r' || ch === '\n');
-				if (ch === '\r' && i + 1 < text.length && text.charAt(i+1) === '\n') {
+				isLineStart = (ch === "\r" || ch === "\n");
+				if (ch === "\r" && i + 1 < text.length && text.charAt(i+1) === "\n") {
 					i++;
 				}
 			}
@@ -272,7 +272,7 @@ export class PhpcsDocuments {
 			}
 		});
 	 	connection.onNotification(DidSaveTextDocumentNotification.type, (event) => {
-			let document = this._documents[event.uri];
+			let document = this._documents[event.textDocument.uri];
 			this._onDidSaveDocument.fire({ document });
 		});
 		connection.onDidCloseTextDocument((event: TextDocumentIdentifier) => {
