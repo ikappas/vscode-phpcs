@@ -46,11 +46,14 @@ export interface PhpcsSettings {
 }
 
 export class PhpcsPathResolver {
-	rootPath: string;
-	phpcsPath: string;
+	private rootPath: string;
+	private phpcsPath: string;
+	private phpcsExecutable : string;
+
 	constructor(rootPath: string) {
 		this.rootPath = rootPath;
-		this.phpcsPath = "phpcs";
+		let extension = /^win/.test(process.platform) ? ".bat" : "";
+		this.phpcsExecutable = `phpcs${extension}`;
 	}
 	/**
 	 * Determine whether composer.json exists at the root path.
@@ -108,6 +111,18 @@ export class PhpcsPathResolver {
 		return result;
 	}
 	resolve(): string {
+		this.phpcsPath = this.phpcsExecutable;
+
+		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
+		let globalPaths = process.env.PATH.split(pathSeparator);
+		globalPaths.forEach(globalPath => {
+			let testPath = path.join( globalPath, this.phpcsExecutable );
+			if (fs.existsSync(testPath)) {
+				this.phpcsPath = testPath;
+				return false;
+			}
+		});
+
 		if (this.rootPath) {
 			// Determine whether composer.json exists in our workspace root.
 			if (this.hasComposerJson()) {
@@ -117,8 +132,7 @@ export class PhpcsPathResolver {
 
 					// Determine whether vendor/bin/phcs exists only when project depends on phpcs.
 					if (this.hasComposerPhpcsDependency()) {
-						let extension = (os.platform() === "win32" || os.platform() === "win64" ) ? ".bat" : "";
-						let vendorPath = path.join(this.rootPath, "vendor", "bin", `phpcs${extension}` );
+						let vendorPath = path.join(this.rootPath, "vendor", "bin", this.phpcsExecutable );
 						if (fs.existsSync(vendorPath)) {
 							this.phpcsPath = vendorPath;
 						} else {
@@ -231,17 +245,32 @@ export class PhpcsLinter {
 		lintArgs.push( filePath );
 
 		return new Promise<Diagnostic[]>((resolve, reject) => {
+			let file = null;
+			let args = null;
+			let phpcs = null;
 
 			let options = {
 				cwd: rootPath ? rootPath: path.dirname(filePath),
+				stdio: [ "ignore", "pipe", "pipe" ],
 				env: process.env,
-				// shell: true,
+				encoding: "utf8",
+				timeout: 0,
+				maxBuffer: `${1024 * 1024}`,
 				detached: true,
-				stdio: [ "ignore", "pipe", "pipe" ]
 			};
 
+			if ( /^win/.test(process.platform) ) {
+				file = process.env.comspec || "cmd.exe";
+				let command = `${lintPath} ${lintArgs.join(" ")}`;
+				args = ["/s", "/c", command];
+				phpcs = cp.execFile( file, args, options );
+			} else {
+				file = lintPath;
+				args = lintArgs;
+				phpcs = cp.spawn( file, args, options );
+			}
+
 			let result = "";
-			let phpcs = cp.spawn( lintPath, lintArgs, options );
 
 			phpcs.stderr.on("data", (buffer: Buffer) => {
 				result += buffer.toString();
