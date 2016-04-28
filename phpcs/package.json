@@ -1,7 +1,7 @@
 {
 	"name": "phpcs",
 	"description": "PHP CodeSniffer for Visual Studio Code",
-	"version": "0.6.0",
+	"version": "0.6.1",
 	"author": "Ioannis Kappas",
 	"publisher": "ikappas",
 	"license": "MIT",
@@ -40,7 +40,10 @@
 					"description": "Control whether phpcs is enabled for PHP files or not."
 				},
 				"phpcs.standard": {
-					"type": "string",
+					"type": [
+						"string",
+						"null"
+					],
 					"default": null,
 					"description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
 				}
