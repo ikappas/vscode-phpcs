@@ -110,6 +110,33 @@ export class PhpcsPathResolver {
 		}
 		return result;
 	}
+	/**
+	 * Get the composer vendor path.
+	 */
+	getVendorPath(): string {
+		let vendorPath = path.join(this.rootPath, "vendor", "bin", this.phpcsExecutable);
+
+		// Safely load composer.json
+		let config = null;
+		try {
+			config = JSON.parse(fs.readFileSync(path.join(this.rootPath, "composer.json"), "utf8"));
+		}
+		catch (exception) {
+			config = {};
+		}
+
+		// Check vendor-bin configuration
+		if (config["config"] && config["config"]["vendor-dir"]) {
+			vendorPath = path.join(this.rootPath, config["config"]["vendor-dir"], "bin", this.phpcsExecutable);
+		}
+
+		// Check bin-bin configuration
+		if (config["config"] && config["config"]["bin-dir"]) {
+			vendorPath = path.join(this.rootPath, config["config"]["bin-dir"], this.phpcsExecutable);
+		}
+
+		return vendorPath;
+	}
 	resolve(): string {
 		this.phpcsPath = this.phpcsExecutable;
 
@@ -132,11 +159,11 @@ export class PhpcsPathResolver {
 
 					// Determine whether vendor/bin/phcs exists only when project depends on phpcs.
 					if (this.hasComposerPhpcsDependency()) {
-						let vendorPath = path.join(this.rootPath, "vendor", "bin", this.phpcsExecutable );
+						let vendorPath = this.getVendorPath();
 						if (fs.existsSync(vendorPath)) {
 							this.phpcsPath = vendorPath;
 						} else {
-							throw `Composer phpcs dependency is configured but was not found under workspace/vendor/bin. You may need to update your dependencies using "composer update".`;
+							throw `Composer phpcs dependency is configured but was not found under ${vendorPath}. You may need to update your dependencies using "composer update".`;
 						}
 					}
 
