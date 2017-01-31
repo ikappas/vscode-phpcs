@@ -5,7 +5,7 @@
 "use strict";
 
 import {
-	ITextDocument, Diagnostic, DiagnosticSeverity, Files
+	TextDocument, Diagnostic, DiagnosticSeverity, Files
 } from "vscode-languageserver";
 
 import cp = require("child_process");
@@ -177,7 +177,7 @@ export class PhpcsPathResolver {
 	}
 }
 
-function makeDiagnostic(document: ITextDocument, message: PhpcsReportMessage): Diagnostic {
+function makeDiagnostic(document: TextDocument, message: PhpcsReportMessage): Diagnostic {
 
 	let lines = document.getText().split("\n");
 	let line = message.line - 1;
@@ -214,22 +214,18 @@ function makeDiagnostic(document: ITextDocument, message: PhpcsReportMessage): D
 		}
 	}
 
+	let range = {
+		start: { line, character: start },
+		end: { line, character: end }
+	};
+
 	// Process diagnostic severity.
 	let severity = DiagnosticSeverity.Error;
 	if (message.type === "WARNING") {
 		severity = DiagnosticSeverity.Warning;
 	}
 
-	let diagnostic: Diagnostic = {
-		range: {
-			start: { line, character: start },
-			end: { line, character: end }
-		},
-		severity,
-		message: `${ message.message }`
-	};
-
-	return diagnostic;
+	return Diagnostic.create( range, `${ message.message }`, severity, null, 'phpcs' );
 };
 
 export class PhpcsLinter {
@@ -248,8 +244,14 @@ export class PhpcsLinter {
 			try {
 				let phpcsPathResolver = new PhpcsPathResolver(rootPath);
 				let phpcsPath = phpcsPathResolver.resolve();
+				let command = phpcsPath;
 
-				cp.exec(`${phpcsPath} --version`, function(error, stdout, stderr) {
+				// Make sure we escape spaces in paths on Windows.
+				if ( /^win/.test(process.platform) ) {
+					command = `"${command}"`;
+				}
+
+				cp.exec(`${command} --version`, function(error, stdout, stderr) {
 
 					if (error) {
 						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer depency manager to install it in your project locally.");
@@ -263,9 +265,19 @@ export class PhpcsLinter {
 		});
 	}
 
-	public lint(document: ITextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
+	public lint(document: TextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
+
+		// Process linting paths.
 		let filePath = Files.uriToFilePath(document.uri);
 		let lintPath = this.phpcsPath;
+
+		// Make sure we escape spaces in paths on Windows.
+		if ( /^win/.test(process.platform) ) {
+			filePath = `"${filePath}"`;
+		 	lintPath = `"${lintPath}"`;
+		}
+
+		// Process linting arguments.
 		let lintArgs = [ "--report=json" ];
 		if (settings.standard) {
 			lintArgs.push(`--standard=${settings.standard}`);
@@ -276,7 +288,7 @@ export class PhpcsLinter {
 		lintArgs.push( filePath );
 
 		return new Promise<Diagnostic[]>((resolve, reject) => {
-			let file = null;
+			let command = null;
 			let args = null;
 			let phpcs = null;
 
@@ -286,19 +298,19 @@ export class PhpcsLinter {
 				env: process.env,
 				encoding: "utf8",
 				timeout: 0,
-				maxBuffer: `${1024 * 1024}`,
+				maxBuffer: 1024 * 1024,
 				detached: true,
+				windowsVerbatimArguments: true,
 			};
 
 			if ( /^win/.test(process.platform) ) {
-				file = process.env.comspec || "cmd.exe";
-				let command = `${lintPath} ${lintArgs.join(" ")}`;
-				args = ["/s", "/c", command];
-				phpcs = cp.execFile( file, args, options );
+				command = process.env.comspec || "cmd.exe";
+				args = ['/s', '/c', '"', lintPath].concat(lintArgs).concat('"');
+				phpcs = cp.execFile( command, args, options );
 			} else {
-				file = lintPath;
+				command = lintPath;
 				args = lintArgs;
-				phpcs = cp.spawn( file, args, options );
+				phpcs = cp.spawn( command, args, options );
 			}
 
 			let result = "";

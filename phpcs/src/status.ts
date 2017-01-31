@@ -27,7 +27,7 @@ class Timer {
 	private enable: boolean = false;
 
     // Member variable: Hold interval id of the timer
-    private handle = 0;
+    private handle : NodeJS.Timer;
 
 	/**
 	 * Class constructor.

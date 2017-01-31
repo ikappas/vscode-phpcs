@@ -1,23 +1,36 @@
-/*---------------------------------------------------------
- * Copyright (C) Ioannis Kappas. All rights reserved.
- *--------------------------------------------------------*/
-"use strict";
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) Ioannis Kappas. All rights reserved.
+ * Licensed under the MIT License. See License.md in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
+/// <reference path="./thenable.ts" />
+'use strict';
+
+// import {
+// 	createConnection, IConnection, TextDocumentSyncKind,
+// 	ResponseError, NotificationType,
+// 	InitializeParams, InitializeResult, InitializeError,
+// 	Diagnostic, DiagnosticSeverity, Position, Files,
+// 	TextDocuments, PublishDiagnosticsParams,
+// 	ErrorMessageTracker, DidChangeConfigurationParams, DidChangeWatchedFilesParams,
+// 	TextDocumentIdentifier
+// } from 'vscode-languageserver';
+
+import {
+	TextDocumentIdentifier, TextDocumentChangeEvent
+} from 'vscode-languageserver-types';
 
 import {
 	IPCMessageReader, IPCMessageWriter,
 	createConnection, IConnection, TextDocumentSyncKind,
-	ResponseError, RequestType, IRequestHandler, NotificationType, INotificationHandler,
+	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
 	InitializeParams, InitializeResult, InitializeError,
-	Diagnostic, DiagnosticSeverity, Position, Files,
-	ITextDocument, PublishDiagnosticsParams,
-	ErrorMessageTracker, DidChangeConfigurationParams, DidChangeWatchedFilesParams,
-	TextDocumentIdentifier
-} from "vscode-languageserver";
+	DidChangeConfigurationParams, DidChangeWatchedFilesParams,
+	ErrorMessageTracker, PublishDiagnosticsParams, Files, ResponseError
+} from 'vscode-languageserver';
 
 import * as os from "os";
 import * as url from "url";
 import * as proto from "./protocol";
-import { PhpcsDocuments, TextDocumentOpenEvent, TextDocumentSaveEvent  } from "./documents";
 import { PhpcsLinter, PhpcsSettings } from "./linter";
 
 class PhpcsServer {
@@ -25,10 +38,10 @@ class PhpcsServer {
     private connection: IConnection;
     private settings: PhpcsSettings;
     private ready: boolean = false;
-    private documents: PhpcsDocuments;
+    private documents: TextDocuments;
     private linter: PhpcsLinter;
 	private rootPath: string;
-	private _validating: { [uri: string]: ITextDocument };
+	private _validating: { [uri: string]: TextDocument };
 
 	/**
 	 * Class constructor.
@@ -38,7 +51,7 @@ class PhpcsServer {
     constructor() {
 		this._validating = Object.create(null);
         this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-        this.documents = new PhpcsDocuments();
+        this.documents = new TextDocuments();
         this.documents.listen(this.connection);
         this.connection.onInitialize((params) => {
             return this.onInitialize(params);
@@ -49,11 +62,14 @@ class PhpcsServer {
         this.connection.onDidChangeWatchedFiles((params) => {
             this.onDidChangeWatchedFiles(params);
         });
-        this.documents.onDidOpenDocument((event) => {
+        this.documents.onDidOpen((event) => {
             this.onDidOpenDocument(event);
         });
-        this.documents.onDidSaveDocument((event) => {
+        this.documents.onDidSave((event) => {
             this.onDidSaveDocument(event);
+        });
+		this.documents.onDidClose((event) => {
+            this.onDidCloseDocument(event);
         });
     }
 
@@ -101,21 +117,31 @@ class PhpcsServer {
 	/**
 	 * Handles opening of text documents.
 	 *
-	 * @param event The text document open event.
+	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidOpenDocument(event: TextDocumentOpenEvent ) : void {
+	private onDidOpenDocument(event: TextDocumentChangeEvent ) : void {
 		this.validateSingle(event.document);
 	}
 
 	/**
 	 * Handles saving of text documents.
 	 *
-	 * @param event The text document save event.
+	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidSaveDocument(event: TextDocumentSaveEvent ) : void {
+	private onDidSaveDocument(event: TextDocumentChangeEvent ) : void {
 		this.validateSingle(event.document);
+	}
+
+	/**
+	 * Handles closing of text documents.
+	 *
+	 * @param event The text document change event.
+	 * @return void
+	 */
+	private onDidCloseDocument(event: TextDocumentChangeEvent ) : void {
+  		this.connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 	}
 
 	/**
@@ -133,7 +159,7 @@ class PhpcsServer {
 	 * @param document The text document to validate.
 	 * @return void
 	 */
-    public validateSingle(document: ITextDocument): void {
+    public validateSingle(document: TextDocument): void {
 		let docUrl = url.parse(document.uri);
 
 		// Only process file documents.
@@ -152,13 +178,13 @@ class PhpcsServer {
 		}
     }
 
-	private sendStartValidationNotification(document:ITextDocument): void {
+	private sendStartValidationNotification(document:TextDocument): void {
 		this.connection.sendNotification(
 			proto.DidStartValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
 		);
 	}
-	private sendEndValidationNotification(document:ITextDocument): void {
+	private sendEndValidationNotification(document:TextDocument): void {
 		this.connection.sendNotification(
 			proto.DidEndValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
@@ -170,21 +196,22 @@ class PhpcsServer {
 	 * @param documents The list of textdocuments to validate.
 	 * @return void
 	 */
-    public validateMany(documents: ITextDocument[]): void {
+    public validateMany(documents: TextDocument[]): void {
 		let tracker = new ErrorMessageTracker();
 		let promises: Thenable<PublishDiagnosticsParams>[] = [];
 
 		documents.forEach(document => {
 			this.sendStartValidationNotification(document);
-			promises.push( this.linter.lint(document, this.settings, this.rootPath).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]) => {
+			promises.push( this.linter.lint(document, this.settings, this.rootPath).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]): PublishDiagnosticsParams => {
 				this.connection.console.log(`processing: ${document.uri}`);
 				this.sendEndValidationNotification(document);
 				let diagnostic = { uri: document.uri, diagnostics };
 				this.connection.sendDiagnostics(diagnostic);
 				return diagnostic;
-			}, (error) => {
+			}, (error: any): PublishDiagnosticsParams => {
 				this.sendEndValidationNotification(document);
 				tracker.add(this.getExceptionMessage(error, document));
+				return { uri: document.uri, diagnostics: [] };
 			}));
 		});
 
@@ -200,7 +227,7 @@ class PhpcsServer {
 	 * @param document The document where the exception occured.
 	 * @return string The exception message.
 	 */
-    private getExceptionMessage(exception: any, document: ITextDocument): string {
+    private getExceptionMessage(exception: any, document: TextDocument): string {
         let msg: string = null;
         if (typeof exception.message === "string" || exception.message instanceof String) {
             msg = <string>exception.message;
