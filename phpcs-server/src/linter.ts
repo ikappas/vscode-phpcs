@@ -43,6 +43,7 @@ interface PhpcsReportMessage {
 export interface PhpcsSettings {
 	enable: boolean;
 	standard: string;
+	ignore: string;
 }
 
 export class PhpcsPathResolver {
@@ -241,6 +242,9 @@ export class PhpcsLinter {
 		let lintArgs = [ "--report=json" ];
 		if (settings.standard) {
 			lintArgs.push(`--standard=${settings.standard}`);
+		}
+		if (settings.ignore) {
+			lintArgs.push(`--ignore=${settings.ignore}`);
 		}
 		lintArgs.push( filePath );
 

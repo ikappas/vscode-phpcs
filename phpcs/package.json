@@ -46,6 +46,14 @@
 					],
 					"default": null,
 					"description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
+				},
+				"phpcs.ignore": {
+					"type": [
+						"string",
+						"null"
+					],
+					"default": null,
+					"description": "Optional. A comma separated list of patterns to ignore files and directories."
 				}
 			}
 		}
