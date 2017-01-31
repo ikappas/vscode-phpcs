@@ -17,10 +17,11 @@
 		"url": "https://github.com/ikappas/vscode-phpcs/issues"
 	},
 	"dependencies": {
-		"vscode-languageserver": "^1.4.1"
+		"vscode-languageserver": "^2.6.2"
 	},
 	"devDependencies": {
-		"typescript": "^1.8.9"
+		"@types/node": "^6.0.52",
+		"typescript": "^2.1.4"
 	},
 	"scripts": {
 		"compile": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc -p .",

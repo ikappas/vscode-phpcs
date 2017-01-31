@@ -5,7 +5,7 @@
 "use strict";
 
 import {
-	ITextDocument, Diagnostic, DiagnosticSeverity, Files
+	TextDocument, Diagnostic, DiagnosticSeverity, Files
 } from "vscode-languageserver";
 
 import cp = require("child_process");
@@ -177,7 +177,7 @@ export class PhpcsPathResolver {
 	}
 }
 
-function makeDiagnostic(document: ITextDocument, message: PhpcsReportMessage): Diagnostic {
+function makeDiagnostic(document: TextDocument, message: PhpcsReportMessage): Diagnostic {
 
 	let lines = document.getText().split("\n");
 	let line = message.line - 1;
@@ -214,22 +214,18 @@ function makeDiagnostic(document: ITextDocument, message: PhpcsReportMessage): D
 		}
 	}
 
+	let range = {
+		start: { line, character: start },
+		end: { line, character: end }
+	};
+
 	// Process diagnostic severity.
 	let severity = DiagnosticSeverity.Error;
 	if (message.type === "WARNING") {
 		severity = DiagnosticSeverity.Warning;
 	}
 
-	let diagnostic: Diagnostic = {
-		range: {
-			start: { line, character: start },
-			end: { line, character: end }
-		},
-		severity,
-		message: `${ message.message }`
-	};
-
-	return diagnostic;
+	return Diagnostic.create( range, `${ message.message }`, severity, null, 'phpcs' );
 };
 
 export class PhpcsLinter {
@@ -263,7 +259,7 @@ export class PhpcsLinter {
 		});
 	}
 
-	public lint(document: ITextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
+	public lint(document: TextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
 		let filePath = Files.uriToFilePath(document.uri);
 		let lintPath = this.phpcsPath;
 		let lintArgs = [ "--report=json" ];
@@ -286,13 +282,13 @@ export class PhpcsLinter {
 				env: process.env,
 				encoding: "utf8",
 				timeout: 0,
-				maxBuffer: `${1024 * 1024}`,
+				maxBuffer: 1024 * 1024,
 				detached: true,
 			};
 
 			if ( /^win/.test(process.platform) ) {
 				file = process.env.comspec || "cmd.exe";
-				let command = `${lintPath} ${lintArgs.join(" ")}`;
+				let command = `"${lintPath}" ${lintArgs.join(" ")}`;
 				args = ["/s", "/c", command];
 				phpcs = cp.execFile( file, args, options );
 			} else {
