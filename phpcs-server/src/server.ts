@@ -2,18 +2,7 @@
  * Copyright (c) Ioannis Kappas. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-/// <reference path="./thenable.ts" />
 'use strict';
-
-// import {
-// 	createConnection, IConnection, TextDocumentSyncKind,
-// 	ResponseError, NotificationType,
-// 	InitializeParams, InitializeResult, InitializeError,
-// 	Diagnostic, DiagnosticSeverity, Position, Files,
-// 	TextDocuments, PublishDiagnosticsParams,
-// 	ErrorMessageTracker, DidChangeConfigurationParams, DidChangeWatchedFilesParams,
-// 	TextDocumentIdentifier
-// } from 'vscode-languageserver';
 
 import {
 	TextDocumentIdentifier, TextDocumentChangeEvent
