@@ -44,6 +44,8 @@ export interface PhpcsSettings {
 	enable: boolean;
 	standard: string;
 	ignore: string;
+	warning_severity?: number;
+	error_severity?: number;
 }
 
 export interface PhpcsVersion {
@@ -306,11 +308,17 @@ export class PhpcsLinter {
           lintArgs.push('-q');
         }
 
-		if (settings.standard) {
+		if (settings.standard !== null) {
 			lintArgs.push(`--standard=${settings.standard}`);
 		}
-		if (settings.ignore) {
+		if (settings.ignore !== null) {
 			lintArgs.push(`--ignore=${settings.ignore}`);
+		}
+		if (settings.error_severity !== null) {
+			lintArgs.push(`--error-severity=${settings.error_severity}`);
+		}
+		if (settings.warning_severity !== null) {
+			lintArgs.push(`--warning-severity=${settings.warning_severity}`);
 		}
 
 		return new Promise<Diagnostic[]>((resolve, reject) => {

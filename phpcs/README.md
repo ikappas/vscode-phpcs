@@ -126,6 +126,17 @@ The following values are applicable:
 [ Optional | **Default:** `null` ]
 This setting controls the files and directories to ignore by `phpcs`. You may specify a comma separated list of patterns to ignore files and directories.
 
+### **phpcs.error_severity**
+
+[ Optional | **Default:** `null` ]
+This setting controls the error severity level used by `phpcs`. You may specify a numeric value.
+
+### **phpcs.warning_severity**
+
+[ Optional | **Default:** `null` ]
+This setting controls the warning severity level used by `phpcs`. You may specify a numeric value.
+
+
 ## Acknowledgements
 
 The extension architecture is based off of the [Language Server Node Example](https://github.com/Microsoft/vscode-languageserver-node-example).

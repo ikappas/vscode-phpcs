@@ -54,6 +54,16 @@
 					],
 					"default": null,
 					"description": "Optional. A comma separated list of patterns to ignore files and directories."
+				},
+				"phpcs.error_severity": {
+					"type": "number",
+					"default": null,
+					"description": "Optional. Control the error severity level."
+				},
+				"phpcs.warning_severity": {
+					"type": "number",
+					"default": null,
+					"description": "Optional. Control the warning severity level."
 				}
 			}
 		}
