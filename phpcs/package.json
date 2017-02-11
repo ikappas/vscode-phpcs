@@ -23,7 +23,7 @@
 		"Linters"
 	],
 	"engines": {
-		"vscode": "^1.4.0"
+		"vscode": "^1.8.0"
 	},
 	"activationEvents": [
 		"onLanguage:php"
@@ -67,10 +67,10 @@
 	"devDependencies": {
 		"@types/mocha": "^2.2.33",
 		"@types/node": "^6.0.52",
-		"typescript": "^2.1.4",
+		"typescript": "^2.1.5",
 		"vscode": "^1.0.3"
 	},
-		"dependencies": {
-		"vscode-languageclient": "^2.6.3"
+	"dependencies": {
+		"vscode-languageclient": "^3.0.3"
 	}
 }

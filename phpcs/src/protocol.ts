@@ -7,29 +7,9 @@
 import { NotificationType, TextDocumentIdentifier } from "vscode-languageclient";
 
 /**
- * The parameters send in a did save text document notification
- */
-export interface DidSaveTextDocumentNotificationParams {
-	/**
-	 * The document that was saved.
-	 */
-	textDocument: TextDocumentIdentifier;
-}
-
-/**
- * The document save notification is sent from the client to the server to signal
- * saved text documents. The document's truth is now managed by the client
- * and the server must not try to read the document's truth using the document's
- * uri.
- */
-export namespace DidSaveTextDocumentNotification {
-    export const type: NotificationType<DidSaveTextDocumentNotificationParams> = { get method() { return "textDocument/didSave"; } };
-}
-
-/**
  * The parameters send in a did start validate text document notification
  */
-export interface DidStartValidateTextDocumentNotificationParams {
+export interface DidStartValidateTextDocumentParams {
 	/**
 	 * The document on which validation started.
 	 */
@@ -41,13 +21,13 @@ export interface DidStartValidateTextDocumentNotificationParams {
  * the start of the validation on text documents.
  */
 export namespace DidStartValidateTextDocumentNotification {
-    export const type: NotificationType<DidStartValidateTextDocumentNotificationParams> = { get method() { return "textDocument/didStartValidate"; } };
+    export const type = new NotificationType<DidStartValidateTextDocumentParams, void>( "textDocument/didStartValidate" );
 }
 
 /**
  * The parameters send in a did end validate text document notification
  */
-export interface DidEndValidateTextDocumentNotificationParams {
+export interface DidEndValidateTextDocumentParams {
 	/**
 	 * The document on which validation ended.
 	 */
@@ -59,5 +39,5 @@ export interface DidEndValidateTextDocumentNotificationParams {
  * the end of the validation on text documents.
  */
 export namespace DidEndValidateTextDocumentNotification {
-    export const type: NotificationType<DidEndValidateTextDocumentNotificationParams> = { get method() { return "textDocument/didEndValidate"; } };
+    export const type = new NotificationType<DidEndValidateTextDocumentParams, void>( "textDocument/didEndValidate" );
 }

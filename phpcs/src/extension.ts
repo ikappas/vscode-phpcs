@@ -42,24 +42,15 @@ export function activate(context: ExtensionContext) {
 	// Create the language client the client.
 	let client = new LanguageClient("PHP CodeSniffer Linter", serverOptions, clientOptions);
 
-	// Create the save handler.
-	let saveHandler = workspace.onDidSaveTextDocument(document => {
-		if (document.languageId != `php`) {
-			return;
-		}
-		let params: proto.DidSaveTextDocumentNotificationParams = { textDocument: TextDocumentIdentifier.create( document.uri.toString() ) };
-		client.sendNotification<proto.DidSaveTextDocumentNotificationParams>(proto.DidSaveTextDocumentNotification.type, params);
-	});
-
 	let status = new PhpcsStatus();
-	client.onNotification( proto.DidStartValidateTextDocumentNotification.type, (event) => {
-		status.startProcessing(event.textDocument.uri);
+	client.onReady().then(() => {
+		client.onNotification( proto.DidStartValidateTextDocumentNotification.type, (event):void => {
+			status.startProcessing(event.textDocument.uri);
+		});
+		client.onNotification( proto.DidEndValidateTextDocumentNotification.type, (event) => {
+			status.endProcessing(event.textDocument.uri);
+		});
 	});
-	client.onNotification( proto.DidEndValidateTextDocumentNotification.type, (event) => {
-		status.endProcessing(event.textDocument.uri);
-	});
-
-	context.subscriptions.push(saveHandler);
 
 	// Create the settings monitor and start the monitor for the client.
 	let monitor = new SettingMonitor(client, "phpcs.enable").start();
