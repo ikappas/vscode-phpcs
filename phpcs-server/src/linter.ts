@@ -220,7 +220,7 @@ function makeDiagnostic(document: TextDocument, message: PhpcsReportMessage): Di
 	};
 
 	// Process diagnostic severity.
-	let severity = DiagnosticSeverity.Error;
+	let severity: DiagnosticSeverity = DiagnosticSeverity.Error;
 	if (message.type === "WARNING") {
 		severity = DiagnosticSeverity.Warning;
 	}
