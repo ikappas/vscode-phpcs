@@ -312,7 +312,6 @@ export class PhpcsLinter {
 		if (settings.ignore) {
 			lintArgs.push(`--ignore=${settings.ignore}`);
 		}
-		lintArgs.push( filePath );
 
 		return new Promise<Diagnostic[]>((resolve, reject) => {
 			let command = null;
@@ -321,7 +320,6 @@ export class PhpcsLinter {
 
 			let options = {
 				cwd: rootPath ? rootPath: path.dirname(filePath),
-				stdio: [ "ignore", "pipe", "pipe" ],
 				env: process.env,
 				encoding: "utf8",
 				timeout: 0,
@@ -384,6 +382,9 @@ export class PhpcsLinter {
 					reject(e);
 				}
 			});
+
+			phpcs.stdin.write( document.getText() );
+			phpcs.stdin.end();
 		});
 	}
 }

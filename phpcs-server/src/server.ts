@@ -52,6 +52,9 @@ class PhpcsServer {
         this.connection.onDidChangeWatchedFiles((params) => {
             this.onDidChangeWatchedFiles(params);
         });
+		this.documents.onDidChangeContent((event) =>{
+			this.onDidChangeDocument(event);
+		});
         this.documents.onDidOpen((event) => {
             this.onDidOpenDocument(event);
         });
@@ -135,6 +138,16 @@ class PhpcsServer {
 	}
 
 	/**
+	 * Handles changes of text documents.
+	 *
+	 * @param event The text document change event.
+	 * @return void
+	 */
+	private onDidChangeDocument(event: TextDocumentChangeEvent ) : void {
+		this.validateSingle(event.document);
+	}
+
+	/**
 	 * Start listening to requests.
 	 *
 	 * @return void
@@ -150,10 +163,7 @@ class PhpcsServer {
 	 * @return void
 	 */
     public validateSingle(document: TextDocument): void {
-		let docUrl = url.parse(document.uri);
-
-		// Only process file documents.
-		if (docUrl.protocol == "file:" && this._validating[document.uri] === undefined ) {
+		if (this._validating[document.uri] === undefined ) {
 			this._validating[ document.uri ] = document;
 			this.sendStartValidationNotification(document);
 			this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
