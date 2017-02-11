@@ -278,7 +278,7 @@ export class PhpcsLinter {
 		}
 
 		// Process linting arguments.
-		let lintArgs = [ "--report=json" ];
+		let lintArgs = [ "--report=json", "-q" ];
 		if (settings.standard) {
 			lintArgs.push(`--standard=${settings.standard}`);
 		}
