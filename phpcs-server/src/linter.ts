@@ -46,6 +46,12 @@ export interface PhpcsSettings {
 	ignore: string;
 }
 
+export interface PhpcsVersion {
+	major: number;
+	minor: number;
+	patch: number;
+}
+
 export class PhpcsPathResolver {
 	private rootPath: string;
 	private phpcsPath: string;
@@ -230,10 +236,12 @@ function makeDiagnostic(document: TextDocument, message: PhpcsReportMessage): Di
 
 export class PhpcsLinter {
 
-	private phpcsPath: string;
+	private path: string;
+	private version: PhpcsVersion;
 
-	constructor(phpcsPath: string) {
-		this.phpcsPath = phpcsPath;
+	private constructor(path: string, version: PhpcsVersion) {
+		this.path = path;
+		this.version = version;
 	}
 
 	/**
@@ -257,7 +265,17 @@ export class PhpcsLinter {
 						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer depency manager to install it in your project locally.");
 					}
 
-					resolve(new PhpcsLinter(phpcsPath));
+					let versionPattern: RegExp = /^PHP_CodeSniffer version (\d+)\.(\d+)\.(\d+)/i;
+					let versionMatches = stdout.match(versionPattern);
+
+					let version: PhpcsVersion = { major: 0, minor: 0, patch: 0 };
+					if (versionMatches !== null) {
+						version.major = Number.parseInt(versionMatches[1], 10);
+						version.minor = Number.parseInt(versionMatches[2], 10);
+						version.patch = Number.parseInt(versionMatches[3], 10);
+					}
+
+					resolve(new PhpcsLinter(phpcsPath, version));
 				});
 			} catch(e) {
 				reject(e);
@@ -269,7 +287,7 @@ export class PhpcsLinter {
 
 		// Process linting paths.
 		let filePath = Files.uriToFilePath(document.uri);
-		let lintPath = this.phpcsPath;
+		let lintPath = this.path;
 
 		// Make sure we escape spaces in paths on Windows.
 		if ( /^win/.test(process.platform) ) {
@@ -278,7 +296,16 @@ export class PhpcsLinter {
 		}
 
 		// Process linting arguments.
-		let lintArgs = [ "--report=json", "-q" ];
+		let lintArgs = [ '--report=json' ];
+
+		// -q (quiet) option is available since phpcs 2.6.2
+        if (this.version.major > 2
+          || (this.version.major === 2 && this.version.minor > 6)
+          || (this.version.major === 2 && this.version.minor === 6 && this.version.patch >= 2)
+        ) {
+          lintArgs.push('-q');
+        }
+
 		if (settings.standard) {
 			lintArgs.push(`--standard=${settings.standard}`);
 		}
