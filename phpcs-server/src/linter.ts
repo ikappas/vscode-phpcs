@@ -8,6 +8,7 @@ import {
 	TextDocument, Diagnostic, DiagnosticSeverity, Files
 } from "vscode-languageserver";
 
+import minimatch = require("minimatch");
 import cp = require("child_process");
 import path = require("path");
 import fs = require("fs");
@@ -43,7 +44,7 @@ interface PhpcsReportMessage {
 export interface PhpcsSettings {
 	enable: boolean;
 	standard: string;
-	ignore: string;
+	ignorePatterns?: string[];
 	warning_severity?: number;
 	error_severity?: number;
 }
@@ -325,9 +326,18 @@ export class PhpcsLinter {
 			if (settings.standard !== undefined) {
 				lintArgs.push(`--standard=${settings.standard}`);
 			}
-			if (settings.ignore !== undefined ) {
-				lintArgs.push(`--ignore=${settings.ignore}`);
+
+			// Check if file should be ignored
+			if (settings.ignorePatterns !== undefined && settings.ignorePatterns.length) {
+				if (this.version.major > 2) {
+					// PHPCS v3 and up support this with STDIN files
+					lintArgs.push(`--ignore=${settings.ignorePatterns.join(',')}`);
+				} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
+					// We must determine this ourself for lower versions
+					return resolve([]);
+				}
 			}
+
 			if (settings.error_severity !== undefined) {
 				lintArgs.push(`--error-severity=${settings.error_severity}`);
 			}

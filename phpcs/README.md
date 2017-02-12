@@ -121,10 +121,19 @@ The following values are applicable:
     }
     ```
 
-### **phpcs.ignore**
+### **phpcs.ignorePatterns**
 
-[ Optional | **Default:** `null` ]
-This setting controls the files and directories to ignore by `phpcs`. You may specify a comma separated list of patterns to ignore files and directories.
+[ Optional | **Type:** `array` | **Default:** `null` ]
+This setting controls the files and directories to ignore when linting your documents. You may specify an array of glob patterns to ignore files and directories.
+
+```json
+{
+    "phpcs.ignorePatterns": [
+        "*/ignored-file.php",
+        "*/ignored-dir/*"
+    ]
+}
+```
 
 ### **phpcs.error_severity**
 
