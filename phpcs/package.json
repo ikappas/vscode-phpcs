@@ -55,13 +55,19 @@
 					"default": null,
 					"description": "Optional. An array of glob patterns to ignore files and directories."
 				},
-				"phpcs.error_severity": {
-					"type": "number",
+				"phpcs.errorSeverity": {
+					"type": [
+						"number",
+						"null"
+					],
 					"default": null,
 					"description": "Optional. Control the error severity level."
 				},
-				"phpcs.warning_severity": {
-					"type": "number",
+				"phpcs.warningSeverity": {
+					"type": [
+						"number",
+						"null"
+					],
 					"default": null,
 					"description": "Optional. Control the warning severity level."
 				}

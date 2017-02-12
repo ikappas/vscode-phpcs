@@ -45,8 +45,8 @@ export interface PhpcsSettings {
 	enable: boolean;
 	standard: string;
 	ignorePatterns?: string[];
-	warning_severity?: number;
-	error_severity?: number;
+	warningSeverity?: number;
+	errorSeverity?: number;
 }
 
 export interface PhpcsVersion {
@@ -338,11 +338,11 @@ export class PhpcsLinter {
 				}
 			}
 
-			if (settings.error_severity !== undefined) {
-				lintArgs.push(`--error-severity=${settings.error_severity}`);
+			if (settings.errorSeverity !== undefined) {
+				lintArgs.push(`--error-severity=${settings.errorSeverity}`);
 			}
-			if (settings.warning_severity !== undefined) {
-				lintArgs.push(`--warning-severity=${settings.warning_severity}`);
+			if (settings.warningSeverity !== undefined) {
+				lintArgs.push(`--warning-severity=${settings.warningSeverity}`);
 			}
 
 			let command = null;
