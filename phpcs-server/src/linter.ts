@@ -299,16 +299,6 @@ export class PhpcsLinter {
 				return resolve([]);
 			}
 
-			// Make sure we escape spaces in paths on Windows.
-			if ( /^win/.test(process.platform) ) {
-				if (/\s/g.test(filePath)) {
-					filePath = `"${filePath}"`;
-				}
-				if (/\s/g.test(executablePath)) {
-					executablePath = `"${executablePath}"`;
-				}
-			}
-
 			// Process linting arguments.
 			let lintArgs = [ '--report=json' ];
 
@@ -351,12 +341,21 @@ export class PhpcsLinter {
 				lintArgs.push(`--warning-severity=${settings.warningSeverity}`);
 			}
 
+			// Make sure we escape spaces in paths on Windows.
+			if ( /^win/.test(process.platform) ) {
+				if (/\s/g.test(filePath)) {
+					filePath = `"${filePath}"`;
+				}
+				if (/\s/g.test(executablePath)) {
+					executablePath = `"${executablePath}"`;
+				}
+			}
+
 			let command = null;
 			let args = null;
 			let phpcs = null;
 
 			let options = {
-				cwd: rootPath ? rootPath: path.dirname(filePath),
 				env: process.env,
 				encoding: "utf8",
 				timeout: 0,
