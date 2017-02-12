@@ -301,8 +301,12 @@ export class PhpcsLinter {
 
 			// Make sure we escape spaces in paths on Windows.
 			if ( /^win/.test(process.platform) ) {
-				filePath = `"${filePath}"`;
-				executablePath = `"${executablePath}"`;
+				if (/\s/g.test(filePath)) {
+					filePath = `"${filePath}"`;
+				}
+				if (/\s/g.test(executablePath)) {
+					executablePath = `"${executablePath}"`;
+				}
 			}
 
 			// Process linting arguments.
