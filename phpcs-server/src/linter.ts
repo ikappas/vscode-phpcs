@@ -286,42 +286,55 @@ export class PhpcsLinter {
 	}
 
 	public lint(document: TextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
-
-		// Process linting paths.
-		let filePath = Files.uriToFilePath(document.uri);
-		let lintPath = this.path;
-
-		// Make sure we escape spaces in paths on Windows.
-		if ( /^win/.test(process.platform) ) {
-			filePath = `"${filePath}"`;
-		 	lintPath = `"${lintPath}"`;
-		}
-
-		// Process linting arguments.
-		let lintArgs = [ '--report=json' ];
-
-		// -q (quiet) option is available since phpcs 2.6.2
-        if (this.version.major > 2
-          || (this.version.major === 2 && this.version.minor > 6)
-          || (this.version.major === 2 && this.version.minor === 6 && this.version.patch >= 2)
-        ) {
-          lintArgs.push('-q');
-        }
-
-		if (settings.standard !== null) {
-			lintArgs.push(`--standard=${settings.standard}`);
-		}
-		if (settings.ignore !== null) {
-			lintArgs.push(`--ignore=${settings.ignore}`);
-		}
-		if (settings.error_severity !== null) {
-			lintArgs.push(`--error-severity=${settings.error_severity}`);
-		}
-		if (settings.warning_severity !== null) {
-			lintArgs.push(`--warning-severity=${settings.warning_severity}`);
-		}
-
 		return new Promise<Diagnostic[]>((resolve, reject) => {
+
+			// Process linting paths.
+			let filePath = Files.uriToFilePath(document.uri);
+			let fileText = document.getText();
+			let executablePath = this.path;
+
+			// Return empty on empty text.
+			if (fileText === '') {
+				return resolve([]);
+			}
+
+			// Make sure we escape spaces in paths on Windows.
+			if ( /^win/.test(process.platform) ) {
+				filePath = `"${filePath}"`;
+				executablePath = `"${executablePath}"`;
+			}
+
+			// Process linting arguments.
+			let lintArgs = [ '--report=json' ];
+
+			// -q (quiet) option is available since phpcs 2.6.2
+			if (this.version.major > 2
+			|| (this.version.major === 2 && this.version.minor > 6)
+			|| (this.version.major === 2 && this.version.minor === 6 && this.version.patch >= 2)
+			) {
+				lintArgs.push('-q');
+			}
+
+			// --encoding option is available since 1.3.0
+			if (this.version.major > 1
+			|| (this.version.major === 1 && this.version.minor >= 3)
+			) {
+				lintArgs.push('--encoding=UTF-8');
+			}
+
+			if (settings.standard !== undefined) {
+				lintArgs.push(`--standard=${settings.standard}`);
+			}
+			if (settings.ignore !== undefined ) {
+				lintArgs.push(`--ignore=${settings.ignore}`);
+			}
+			if (settings.error_severity !== undefined) {
+				lintArgs.push(`--error-severity=${settings.error_severity}`);
+			}
+			if (settings.warning_severity !== undefined) {
+				lintArgs.push(`--warning-severity=${settings.warning_severity}`);
+			}
+
 			let command = null;
 			let args = null;
 			let phpcs = null;
@@ -338,10 +351,10 @@ export class PhpcsLinter {
 
 			if ( /^win/.test(process.platform) ) {
 				command = process.env.comspec || "cmd.exe";
-				args = ['/s', '/c', '"', lintPath].concat(lintArgs).concat('"');
+				args = ['/s', '/c', '"', executablePath].concat(lintArgs).concat('"');
 				phpcs = cp.execFile( command, args, options );
 			} else {
-				command = lintPath;
+				command = executablePath;
 				args = lintArgs;
 				phpcs = cp.spawn( command, args, options );
 			}
@@ -358,7 +371,7 @@ export class PhpcsLinter {
 
 			phpcs.on("close", (code: string) => {
 				try {
-					result = result.trim();
+					result = result.toString().trim();
 					let match = null;
 
 					// Determine whether we have an error and report it otherwise send back the diagnostics.
@@ -377,13 +390,13 @@ export class PhpcsLinter {
 					}
 
 					let diagnostics: Diagnostic[] = [];
-					let report = JSON.parse(result);
-					for (var filename in report.files) {
-						let file: PhpcsReportFile = report.files[filename];
-						file.messages.forEach(message => {
-							diagnostics.push(makeDiagnostic(document, message));
-						});
-					}
+					let reportJson = JSON.parse(result);
+					let fileReport: PhpcsReportFile = reportJson.files.STDIN;
+
+					fileReport.messages.forEach((message) => {
+						diagnostics.push(makeDiagnostic(document, message));
+					});
+
 					resolve(diagnostics);
 				}
 				catch (e) {
@@ -391,7 +404,7 @@ export class PhpcsLinter {
 				}
 			});
 
-			phpcs.stdin.write( document.getText() );
+			phpcs.stdin.write( fileText );
 			phpcs.stdin.end();
 		});
 	}
