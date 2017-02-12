@@ -327,14 +327,16 @@ export class PhpcsLinter {
 				lintArgs.push(`--standard=${settings.standard}`);
 			}
 
-			// Check if file should be ignored
-			if (settings.ignorePatterns !== undefined && settings.ignorePatterns.length) {
-				if (this.version.major > 2) {
-					// PHPCS v3 and up support this with STDIN files
-					lintArgs.push(`--ignore=${settings.ignorePatterns.join(',')}`);
-				} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
-					// We must determine this ourself for lower versions
-					return resolve([]);
+			// Check if file should be ignored (Skip for in-memory documents)
+			if ( filePath !== undefined ) {
+				if (settings.ignorePatterns !== undefined && settings.ignorePatterns.length) {
+					if (this.version.major > 2) {
+						// PHPCS v3 and up support this with STDIN files
+						lintArgs.push(`--ignore=${settings.ignorePatterns.join(',')}`);
+					} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
+						// We must determine this ourself for lower versions
+						return resolve([]);
+					}
 				}
 			}
 
