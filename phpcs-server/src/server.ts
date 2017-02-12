@@ -155,7 +155,39 @@ class PhpcsServer {
     public listen(): void {
         this.connection.listen();
     }
-
+	/**
+     * Sends diagnostics computed for a given document to VSCode to render them in the
+     * user interface.
+     *
+     * @param params The diagnostic parameters.
+     */
+    private sendDiagnostics(params: PublishDiagnosticsParams): void {
+		this.connection.sendDiagnostics(params);
+	}
+	/**
+	 * Sends a notification for starting validation of a document.
+	 *
+	 * @param document The text document on which validation started.
+	 */
+	private sendStartValidationNotification(document: TextDocument): void {
+		this._validating[ document.uri ] = document;
+		this.connection.sendNotification(
+			proto.DidStartValidateTextDocumentNotification.type,
+			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
+		);
+	}
+	/**
+	 * Sends a notification for ending validation of a document.
+	 *
+	 * @param document The text document on which validation ended.
+	 */
+	private sendEndValidationNotification(document: TextDocument): void {
+		delete this._validating[ document.uri ];
+		this.connection.sendNotification(
+			proto.DidEndValidateTextDocumentNotification.type,
+			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
+		);
+	}
 	/**
 	 * Validate a single text document.
 	 *
@@ -163,33 +195,17 @@ class PhpcsServer {
 	 * @return void
 	 */
     public validateSingle(document: TextDocument): void {
-		if (this._validating[document.uri] === undefined ) {
-			this._validating[ document.uri ] = document;
+		if (this._validating[ document.uri ] === undefined ) {
 			this.sendStartValidationNotification(document);
 			this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
-				delete this._validating[document.uri];
 				this.sendEndValidationNotification(document);
-				this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
+				this.sendDiagnostics({ uri: document.uri, diagnostics });
 			}, (error) => {
-				delete this._validating[document.uri];
 				this.sendEndValidationNotification(document);
 				this.connection.window.showErrorMessage(this.getExceptionMessage(error, document));
 			});
 		}
     }
-
-	private sendStartValidationNotification(document:TextDocument): void {
-		this.connection.sendNotification(
-			proto.DidStartValidateTextDocumentNotification.type,
-			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
-		);
-	}
-	private sendEndValidationNotification(document:TextDocument): void {
-		this.connection.sendNotification(
-			proto.DidEndValidateTextDocumentNotification.type,
-			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
-		);
-	}
 	/**
 	 * Validate a list of text documents.
 	 *
@@ -197,27 +213,30 @@ class PhpcsServer {
 	 * @return void
 	 */
     public validateMany(documents: TextDocument[]): void {
-		let tracker = new ErrorMessageTracker();
-		let promises: Thenable<PublishDiagnosticsParams>[] = [];
-
-		documents.forEach(document => {
-			this.sendStartValidationNotification(document);
-			promises.push( this.linter.lint(document, this.settings, this.rootPath).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]): PublishDiagnosticsParams => {
-				this.connection.console.log(`processing: ${document.uri}`);
-				this.sendEndValidationNotification(document);
-				let diagnostic = { uri: document.uri, diagnostics };
-				this.connection.sendDiagnostics(diagnostic);
-				return diagnostic;
-			}, (error: any): PublishDiagnosticsParams => {
-				this.sendEndValidationNotification(document);
-				tracker.add(this.getExceptionMessage(error, document));
-				return { uri: document.uri, diagnostics: [] };
-			}));
+		documents.forEach((document: TextDocument) =>{
+			this.validateSingle(document);
 		});
+		// let tracker = new ErrorMessageTracker();
+		// let promises: Thenable<PublishDiagnosticsParams>[] = [];
 
-		Promise.all( promises ).then( results => {
-			tracker.sendErrors(this.connection);
-		});
+		// documents.forEach((document: TextDocument) => {
+		// 	this.sendStartValidationNotification(document);
+		// 	promises.push( this.linter.lint(document, this.settings, this.rootPath).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]): PublishDiagnosticsParams => {
+		// 		this.connection.console.log(`processing: ${document.uri}`);
+		// 		this.sendEndValidationNotification(document);
+		// 		let diagnostic = { uri: document.uri, diagnostics };
+		// 		this.sendDiagnostics(diagnostic);
+		// 		return diagnostic;
+		// 	}, (error: any): PublishDiagnosticsParams => {
+		// 		this.sendEndValidationNotification(document);
+		// 		tracker.add(this.getExceptionMessage(error, document));
+		// 		return { uri: document.uri, diagnostics: [] };
+		// 	}));
+		// });
+
+		// Promise.all( promises ).then( results => {
+		// 	tracker.sendErrors(this.connection);
+		// });
     }
 
 	/**
