@@ -152,13 +152,18 @@ export class PhpcsPathResolver {
 
 		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
 		let globalPaths = process.env.PATH.split(pathSeparator);
-		globalPaths.forEach(globalPath => {
+		globalPaths.every(globalPath => {
 			let testPath = path.join( globalPath, this.phpcsExecutable );
 			if (fs.existsSync(testPath)) {
 				this.phpcsPath = testPath;
 				return false;
 			}
+			return true;
 		});
+		
+		if (this.phpcsPath != this.phpcsExecutable) {
+			return this.phpcsPath;
+		}
 
 		if (this.rootPath) {
 			// Determine whether composer.json exists in our workspace root.
