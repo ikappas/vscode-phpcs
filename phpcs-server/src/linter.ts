@@ -161,7 +161,7 @@ export class PhpcsPathResolver {
 			return true;
 		});
 		
-		if (this.phpcsPath != this.phpcsExecutable) {
+		if (this.phpcsPath !== this.phpcsExecutable) {
 			return this.phpcsPath;
 		}
 
