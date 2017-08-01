@@ -145,6 +145,10 @@ This setting controls the error severity level used by `phpcs`. You may specify 
 [ Optional | **Type:** `number` | **Default:** `null` ]
 This setting controls the warning severity level used by `phpcs`. You may specify an integer value.
 
+### **phpcs.encoding**
+
+[ Optional | **Type:** `string` | **Default:** `null` ]
+This setting controls the encoding used by `phpcs`. You may specify an string value.
 
 ## Acknowledgements
 

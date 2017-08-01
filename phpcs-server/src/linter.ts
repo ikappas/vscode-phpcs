@@ -47,6 +47,7 @@ export interface PhpcsSettings {
 	ignorePatterns?: string[];
 	warningSeverity?: number;
 	errorSeverity?: number;
+	encoding?: string;
 }
 
 export interface PhpcsVersion {
@@ -314,7 +315,11 @@ export class PhpcsLinter {
 			if (this.version.major > 1
 			|| (this.version.major === 1 && this.version.minor >= 3)
 			) {
-				lintArgs.push('--encoding=UTF-8');
+				if(settings.encoding !== undefined) {
+					lintArgs.push(`--encoding=${settings.encoding}`);
+				} else {
+					lintArgs.push('--encoding=UTF-8');
+				}
 			}
 
 			if (settings.standard !== undefined) {

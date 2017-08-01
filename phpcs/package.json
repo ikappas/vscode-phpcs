@@ -70,6 +70,14 @@
 					],
 					"default": null,
 					"description": "Optional. Control the warning severity level."
+				},
+				"phpcs.encoding": {
+					"type": [
+						"string",
+						"null"
+					],
+					"default": null,
+					"description": "Optional. Control the enconding."
 				}
 			}
 		}
