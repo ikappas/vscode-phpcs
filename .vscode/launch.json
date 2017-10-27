@@ -1,0 +1,39 @@
+{
+	"version": "0.2.0",
+	"compounds": [
+		{
+			"name": "Client+Server",
+			"configurations": ["Launch Extension", "Attach to Server"]
+		}
+	],
+	"configurations": [
+		{
+			"name": "Launch Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}/phpcs"
+			],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceRoot}/phpcs/out/**/*.js"
+			],
+			"preLaunchTask": "watch:client"
+		},
+		{
+			"name": "Attach to Server",
+			"type": "node",
+			"request": "attach",
+			"port": 6199,
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceRoot}/phpcs/server/**/*.js"
+			],
+			"protocol": "inspector",
+			"preLaunchTask": "watch:server"
+		}
+	]
+}
