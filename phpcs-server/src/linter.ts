@@ -29,21 +29,23 @@ let minimatch = require("minimatch");
 interface PhpcsReportFile {
 	errors: number;
 	warnings: number;
-	messages: Array<PhpcsReportMessage>;
+	messages: Array<PhpcsMessageEntry>;
 }
 
-interface PhpcsReportMessage {
+interface PhpcsMessageEntry {
 	message: string;
 	severity: number;
 	type: string;
 	line: number;
 	column: number;
 	fixable: boolean;
+	source?: string;
 }
 
 export interface PhpcsSettings {
 	enable: boolean;
 	standard: string;
+	showSource: boolean;
 	ignorePatterns?: string[];
 	warningSeverity?: number;
 	errorSeverity?: number;
@@ -187,15 +189,19 @@ export class PhpcsPathResolver {
 	}
 }
 
-function makeDiagnostic(document: TextDocument, message: PhpcsReportMessage): Diagnostic {
+interface DiagnosticOptions {
+	showSource: boolean;
+}
+
+function makeDiagnostic(document: TextDocument, entry: PhpcsMessageEntry, options: DiagnosticOptions ): Diagnostic {
 
 	let lines = document.getText().split("\n");
-	let line = message.line - 1;
+	let line = entry.line - 1;
 	let lineString = lines[line];
 
 	// Process diagnostic start and end columns.
-	let start = message.column - 1;
-	let end = message.column;
+	let start = entry.column - 1;
+	let end = entry.column;
 	let charCode = lineString.charCodeAt(start);
 	if (cc.isWhitespace(charCode)) {
 		for (var i = start + 1, len = lineString.length; i < len; i++) {
@@ -231,11 +237,17 @@ function makeDiagnostic(document: TextDocument, message: PhpcsReportMessage): Di
 
 	// Process diagnostic severity.
 	let severity: DiagnosticSeverity = DiagnosticSeverity.Error;
-	if (message.type === "WARNING") {
+	if (entry.type === "WARNING") {
 		severity = DiagnosticSeverity.Warning;
 	}
 
-	return Diagnostic.create( range, `${ message.message }`, severity, null, 'phpcs' );
+	// Process diagnostic source.
+	let message: string = entry.message;
+	if (options.showSource) {
+		message += `\n(${ entry.source })`;
+	}
+
+	return Diagnostic.create( range, message, severity, null, 'phpcs' );
 };
 
 export class PhpcsLinter {
@@ -309,6 +321,10 @@ export class PhpcsLinter {
 			|| (this.version.major === 2 && this.version.minor === 6 && this.version.patch >= 2)
 			) {
 				lintArgs.push('-q');
+			}
+
+			if (settings.showSource === true) {
+				lintArgs.push('-s');
 			}
 
 			// --encoding option is available since 1.3.0
@@ -410,7 +426,9 @@ export class PhpcsLinter {
 					let fileReport: PhpcsReportFile = reportJson.files.STDIN;
 
 					fileReport.messages.forEach((message) => {
-						diagnostics.push(makeDiagnostic(document, message));
+						diagnostics.push(makeDiagnostic(document, message, {
+							showSource: settings.showSource
+						}));
 					});
 
 					resolve(diagnostics);

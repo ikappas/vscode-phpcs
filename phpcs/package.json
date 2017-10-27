@@ -5,7 +5,6 @@
   "author": "Ioannis Kappas",
   "publisher": "ikappas",
   "license": "MIT",
-  "icon": "phpcs_icon.svg",
   "galleryBanner": {
     "color": "#6082bb",
     "theme": "dark"
@@ -70,6 +69,11 @@
           ],
           "default": null,
           "description": "Optional. Control the warning severity level."
+        },
+        "phpcs.showSource": {
+          "type": "boolean",
+          "default": false,
+          "description": "Optional. Control whether sniff sources are displayed."
         }
       }
     }

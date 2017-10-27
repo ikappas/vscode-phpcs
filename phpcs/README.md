@@ -145,6 +145,10 @@ This setting controls the error severity level used by `phpcs`. You may specify 
 [ Optional | **Type:** `number` | **Default:** `null` ]
 This setting controls the warning severity level used by `phpcs`. You may specify an integer value.
 
+### **phpcs.showSource**
+
+[ Optional | **Default**: `false` ]
+This setting controls whether sniff sources are displayed.
 
 ## Acknowledgements
 
