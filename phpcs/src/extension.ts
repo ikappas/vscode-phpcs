@@ -5,12 +5,11 @@
 "use strict";
 
 import * as path from "path";
-import * as vscode from "vscode";
 import * as proto from "./protocol";
 import { PhpcsStatus } from "./status";
 
-import { workspace, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem } from "vscode";
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, TextDocumentIdentifier } from "vscode-languageclient";
+import { workspace, ExtensionContext } from "vscode";
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from "vscode-languageclient";
 
 export function activate(context: ExtensionContext) {
 
