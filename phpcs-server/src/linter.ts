@@ -27,7 +27,7 @@ interface PhpcsReportTotals{
 }
 
 interface PhpcsReportFile {
-	erros: number;
+	errors: number;
 	warnings: number;
 	messages: Array<PhpcsReportMessage>;
 }
@@ -71,7 +71,7 @@ export class PhpcsPathResolver {
 	hasComposerJson(): boolean {
 		try {
 			return fs.existsSync(path.join(this.rootPath, "composer.json"));
-		} catch(exeption) {
+		} catch(exception) {
 			return false;
 		}
 	}
@@ -81,7 +81,7 @@ export class PhpcsPathResolver {
 	hasComposerLock(): boolean {
 	   try {
 			return fs.existsSync(path.join(this.rootPath, "composer.lock"));
-		} catch(exeption) {
+		} catch(exception) {
 			return false;
 		}
 	}
@@ -167,7 +167,7 @@ export class PhpcsPathResolver {
 				// Determine whether composer is installed.
 				if (this.hasComposerLock()) {
 
-					// Determine whether vendor/bin/phcs exists only when project depends on phpcs.
+					// Determine whether vendor/bin/phpcs exists only when project depends on phpcs.
 					if (this.hasComposerPhpcsDependency()) {
 						let vendorPath = this.getVendorPath();
 						if (fs.existsSync(vendorPath)) {
@@ -265,7 +265,7 @@ export class PhpcsLinter {
 				cp.exec(`${command} --version`, function(error, stdout, stderr) {
 
 					if (error) {
-						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer depency manager to install it in your project locally.");
+						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer dependency manager to install it in your project locally.");
 					}
 
 					let versionPattern: RegExp = /^PHP_CodeSniffer version (\d+)\.(\d+)\.(\d+)/i;
