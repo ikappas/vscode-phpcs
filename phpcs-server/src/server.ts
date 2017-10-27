@@ -209,7 +209,7 @@ class PhpcsServer {
 	/**
 	 * Validate a list of text documents.
 	 *
-	 * @param documents The list of textdocuments to validate.
+	 * @param documents The list of text documents to validate.
 	 * @return void
 	 */
     public validateMany(documents: TextDocument[]): void {
@@ -242,8 +242,8 @@ class PhpcsServer {
 	/**
 	 * Get the exception message from an exception object.
 	 *
-	 * @param exeption The exception to parse.
-	 * @param document The document where the exception occured.
+	 * @param exception The exception to parse.
+	 * @param document The document where the exception occurred.
 	 * @return string The exception message.
 	 */
     private getExceptionMessage(exception: any, document: TextDocument): string {
@@ -255,7 +255,7 @@ class PhpcsServer {
                 msg = msg.substr(5);
             }
         } else {
-            msg = `An unknown error occured while validating file: ${Files.uriToFilePath(document.uri) }`;
+            msg = `An unknown error occurred while validating file: ${Files.uriToFilePath(document.uri) }`;
         }
         return `phpcs: ${msg}`;
     }
