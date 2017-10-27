@@ -1,10 +1,15 @@
 {
 	"compilerOptions": {
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
 		"target": "es6",
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"sourceMap": true,
-		"lib" : [ "es2016" ],
+		"lib": [ "es2016" ],
+		"rootDir": ".",
 		"outDir": "../phpcs/server"
 	},
 	"exclude": [
