@@ -1,92 +1,92 @@
 {
-	"name": "phpcs",
-	"description": "PHP CodeSniffer for Visual Studio Code",
-	"version": "0.7.0",
-	"author": "Ioannis Kappas",
-	"publisher": "ikappas",
-	"license": "MIT",
-	"icon": "phpcs_icon.svg",
-	"galleryBanner": {
-		"color": "#6082bb",
-		"theme": "dark"
-	},
-	"homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/ikappas/vscode-phpcs.git"
-	},
-	"bugs": {
-		"url": "https://github.com/ikappas/vscode-phpcs/issues"
-	},
-	"categories": [
-		"Languages",
-		"Linters"
-	],
-	"engines": {
-		"vscode": "^1.8.0"
-	},
-	"activationEvents": [
-		"onLanguage:php"
-	],
-	"main": "./out/src/extension",
-	"contributes": {
-		"configuration": {
-			"type": "object",
-			"title": "PHP CodeSniffer configuration",
-			"properties": {
-				"phpcs.enable": {
-					"type": "boolean",
-					"default": true,
-					"description": "Control whether phpcs is enabled for PHP files or not."
-				},
-				"phpcs.standard": {
-					"type": [
-						"string",
-						"null"
-					],
-					"default": null,
-					"description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
-				},
-				"phpcs.ignorePatterns": {
-					"type": [
-						"array",
-						"null"
-					],
-					"default": null,
-					"description": "Optional. An array of glob patterns to ignore files and directories."
-				},
-				"phpcs.errorSeverity": {
-					"type": [
-						"number",
-						"null"
-					],
-					"default": null,
-					"description": "Optional. Control the error severity level."
-				},
-				"phpcs.warningSeverity": {
-					"type": [
-						"number",
-						"null"
-					],
-					"default": null,
-					"description": "Optional. Control the warning severity level."
-				}
-			}
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "tsc -p ./",
-		"compile": "tsc -watch -p ./",
-		"update-vscode": "node ./node_modules/vscode/bin/install",
-		"postinstall": "node ./node_modules/vscode/bin/install"
-	},
-	"devDependencies": {
-		"@types/mocha": "^2.2.33",
-		"@types/node": "^6.0.52",
-		"typescript": "^2.1.5",
-		"vscode": "^1.0.3"
-	},
-	"dependencies": {
-		"vscode-languageclient": "^3.0.3"
-	}
+  "name": "phpcs",
+  "description": "PHP CodeSniffer for Visual Studio Code",
+  "version": "0.7.0",
+  "author": "Ioannis Kappas",
+  "publisher": "ikappas",
+  "license": "MIT",
+  "icon": "phpcs_icon.svg",
+  "galleryBanner": {
+    "color": "#6082bb",
+    "theme": "dark"
+  },
+  "homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ikappas/vscode-phpcs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ikappas/vscode-phpcs/issues"
+  },
+  "categories": [
+    "Languages",
+    "Linters"
+  ],
+  "engines": {
+    "vscode": "^1.8.0"
+  },
+  "activationEvents": [
+    "onLanguage:php"
+  ],
+  "main": "./out/src/extension",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "PHP CodeSniffer configuration",
+      "properties": {
+        "phpcs.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Control whether phpcs is enabled for PHP files or not."
+        },
+        "phpcs.standard": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
+        },
+        "phpcs.ignorePatterns": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional. An array of glob patterns to ignore files and directories."
+        },
+        "phpcs.errorSeverity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional. Control the error severity level."
+        },
+        "phpcs.warningSeverity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional. Control the warning severity level."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -watch -p ./",
+    "update-vscode": "node ./node_modules/vscode/bin/install",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.33",
+    "@types/node": "^6.0.52",
+    "typescript": "^2.1.5",
+    "vscode": "^1.0.3"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^3.0.3"
+  }
 }
