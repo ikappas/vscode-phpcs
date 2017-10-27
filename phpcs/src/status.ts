@@ -76,7 +76,7 @@ export class PhpcsStatus {
 	private documents: string[] = [];
 	private processing: number = 0;
 	private spinnerIndex = 0;
-	private spinnerSquense: string[] = [ "|", "/", "-", "\\" ];
+	private spinnerSequence: string[] = [ "|", "/", "-", "\\" ];
 	private timer: Timer;
 	private outputChannel: OutputChannel;
 
@@ -103,20 +103,20 @@ export class PhpcsStatus {
 	}
 
 	private updateStatusText() : void{
-		let sbar = this.getStatusBarItem();
+		let statusBar = this.getStatusBarItem();
 		let count = this.processing;
 		if (count > 0) {
 			let spinner = this.getNextSpinnerChar();
-			sbar.text = count === 1 ? `$(eye) phpcs is linting 1 document ... ${spinner}` : `$(eye) phpcs is linting ${count} documents ... ${spinner}`;
+			statusBar.text = count === 1 ? `$(eye) phpcs is linting 1 document ... ${spinner}` : `$(eye) phpcs is linting ${count} documents ... ${spinner}`;
 		} else {
-			sbar.text = "";
+			statusBar.text = "";
 		}
 	}
 
 	private getNextSpinnerChar(): string {
-		let spinnerChar = this.spinnerSquense[this.spinnerIndex];
+		let spinnerChar = this.spinnerSequence[this.spinnerIndex];
 		this.spinnerIndex +=  1;
-		if (this.spinnerIndex > this.spinnerSquense.length - 1) {
+		if (this.spinnerIndex > this.spinnerSequence.length - 1) {
 			this.spinnerIndex = 0;
 		}
 		return spinnerChar;
