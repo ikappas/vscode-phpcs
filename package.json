@@ -1,0 +1,25 @@
+{
+  "name": "phpcs",
+  "description": "PHP CodeSniffer for Visual Studio Code",
+  "version": "0.7.0",
+  "author": "Ioannis Kappas",
+  "publisher": "ikappas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ikappas/vscode-phpcs.git"
+  },
+  "scripts": {
+    "postinstall": "cd phpcs-server && npm install && cd ../phpcs && npm install && cd ..",
+    "compile": "tsc -p phpcs/tsconfig.json && cd phpcs-server && npm run installServer && cd .. && tsc -p phpcs-server/tsconfig.json",
+    "compile:client": "tsc -p phpcs/tsconfig.json",
+    "watch:client": "tsc -w -p phpcs/tsconfig.json",
+    "compile:server": "cd phpcs-server && npm run installServer && cd .. && tsc -p phpcs-server/tsconfig.json",
+    "watch:server": "cd phpcs-server && npm run installServer && cd .. && tsc -w -p phpcs-server/tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.33",
+    "@types/node": "^6.0.52",
+    "typescript": "^2.1.5"
+  }
+}
