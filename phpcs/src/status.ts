@@ -15,9 +15,10 @@ class Timer {
 
 	/**
 	 * The function to execute on tick.
-	 * @var function
+	 *
+	 * @var Function
 	 */
-    private tick;
+    private tick: Function;
 
 	/**
 	 * A boolean flag indicating whether the timer is enabled.
