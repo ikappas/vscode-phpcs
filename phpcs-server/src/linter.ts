@@ -8,23 +8,23 @@ import {
 	TextDocument, Diagnostic, DiagnosticSeverity, Files
 } from "vscode-languageserver";
 
-import minimatch = require("minimatch");
 import cp = require("child_process");
 import path = require("path");
 import fs = require("fs");
-import os = require("os");
 import cc = require("./utils/charcode");
 
-interface PhpcsReport {
-	totals: PhpcsReportTotals;
-	files: Array<PhpcsReportFile>;
-}
+let minimatch = require("minimatch");
 
-interface PhpcsReportTotals{
-	errors: number;
-	warnings: number;
-	fixable: number;
-}
+// interface PhpcsReport {
+// 	totals: PhpcsReportTotals;
+// 	files: Array<PhpcsReportFile>;
+// }
+
+// interface PhpcsReportTotals{
+// 	errors: number;
+// 	warnings: number;
+// 	fixable: number;
+// }
 
 interface PhpcsReportFile {
 	errors: number;
@@ -103,7 +103,7 @@ export class PhpcsPathResolver {
 		if (dependencies["packages"] && dependencies["packages-dev"]) {
 			try {
 				[ dependencies["packages"], dependencies["packages-dev"]].forEach(pkgs => {
-					let match = pkgs.filter(pkg => {
+					let match = pkgs.filter((pkg: any) => {
 						return pkg.name === "squizlabs/php_codesniffer";
 					});
 					if (match.length !== 0) {
@@ -151,13 +151,14 @@ export class PhpcsPathResolver {
 		this.phpcsPath = this.phpcsExecutable;
 
 		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
-		let globalPaths = process.env.PATH.split(pathSeparator);
-		globalPaths.forEach(globalPath => {
+		let globalPaths: string[] = process.env.PATH.split(pathSeparator);
+		globalPaths.some((globalPath: string) => {
 			let testPath = path.join( globalPath, this.phpcsExecutable );
 			if (fs.existsSync(testPath)) {
 				this.phpcsPath = testPath;
-				return false;
+				return true;
 			}
+			return false;
 		});
 
 		if (this.rootPath) {
@@ -262,7 +263,7 @@ export class PhpcsLinter {
 					command = `"${command}"`;
 				}
 
-				cp.exec(`${command} --version`, function(error, stdout, stderr) {
+				cp.exec(`${command} --version`, function(error, stdout, _stderr) {
 
 					if (error) {
 						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer dependency manager to install it in your project locally.");
@@ -286,7 +287,7 @@ export class PhpcsLinter {
 		});
 	}
 
-	public lint(document: TextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
+	public lint(document: TextDocument, settings: PhpcsSettings, _rootPath?: string): Thenable<Diagnostic[]> {
 		return new Promise<Diagnostic[]>((resolve, reject) => {
 
 			// Process linting paths.
@@ -384,7 +385,7 @@ export class PhpcsLinter {
 				result += buffer.toString();
 			});
 
-			phpcs.on("close", (code: string) => {
+			phpcs.on("close", (_code: string) => {
 				try {
 					result = result.toString().trim();
 					let match = null;
