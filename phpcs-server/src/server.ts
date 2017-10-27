@@ -2,7 +2,7 @@
  * Copyright (c) Ioannis Kappas. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-/// <reference path="thenable.d.ts" />
+/// <reference path="typings/thenable.d.ts" />
 'use strict';
 
 import {
