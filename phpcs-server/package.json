@@ -20,11 +20,8 @@
     "vscode-languageserver": "^3.0.4",
     "minimatch": "^3.0.3"
   },
-  "devDependencies": {
-    "@types/node": "^6.0.52",
-    "typescript": "^2.1.5"
-  },
   "scripts": {
+    "installServer": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json",
     "compile": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc -p .",
     "watch": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc --watch -p ."
   }
