@@ -9,5 +9,24 @@
 	"typescript.tsc.autoDetect": "off",
 	"files.trimTrailingWhitespace": true,
 	"editor.insertSpaces": false,
-	"editor.tabSize": 4
+	"editor.tabSize": 4,
+	"cSpell.words": [
+		"Composer",
+		"Drupal",
+		"Squiz",
+		"WordPress",
+		"Zend",
+		"codesniffer",
+		"comspec",
+		"gitignore",
+		"languageclient",
+		"languageserver",
+		"lockfile",
+		"phpcs",
+		"pkg",
+		"pkgs",
+		"quickstart",
+		"ruleset",
+		"testrunner"
+	]
 }
