@@ -11,15 +11,13 @@ import {
 
 import {
 	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
+	createConnection, IConnection,
+	TextDocuments, TextDocument,
 	InitializeParams, InitializeResult, InitializeError,
 	DidChangeConfigurationParams, DidChangeWatchedFilesParams,
-	ErrorMessageTracker, PublishDiagnosticsParams, Files, ResponseError
+	PublishDiagnosticsParams, Files, ResponseError
 } from 'vscode-languageserver';
 
-import * as os from "os";
-import * as url from "url";
 import * as proto from "./protocol";
 import { PhpcsLinter, PhpcsSettings } from "./linter";
 
@@ -43,7 +41,7 @@ class PhpcsServer {
         this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
         this.documents = new TextDocuments();
         this.documents.listen(this.connection);
-        this.connection.onInitialize((params) => {
+        this.connection.onInitialize((params): any => {
             return this.onInitialize(params);
         });
         this.connection.onDidChangeConfiguration((params) => {
@@ -103,7 +101,7 @@ class PhpcsServer {
 	 * @param params The changed watched files parameters.
 	 * @return void
 	 */
-	private onDidChangeWatchedFiles(params: DidChangeWatchedFilesParams) : void {
+	private onDidChangeWatchedFiles(_params: DidChangeWatchedFilesParams) : void {
 		this.validateMany(this.documents.all());
 	}
 
