@@ -318,13 +318,13 @@ export class PhpcsLinter {
 				lintArgs.push('--encoding=UTF-8');
 			}
 
-			if (settings.standard !== undefined) {
+			if (settings.standard !== null) {
 				lintArgs.push(`--standard=${settings.standard}`);
 			}
 
 			// Check if file should be ignored (Skip for in-memory documents)
 			if ( filePath !== undefined ) {
-				if (settings.ignorePatterns !== undefined && settings.ignorePatterns.length) {
+				if (settings.ignorePatterns !== null && settings.ignorePatterns.length) {
 					if (this.version.major > 2) {
 						// PHPCS v3 and up support this with STDIN files
 						lintArgs.push(`--ignore=${settings.ignorePatterns.join(',')}`);
@@ -335,10 +335,10 @@ export class PhpcsLinter {
 				}
 			}
 
-			if (settings.errorSeverity !== undefined) {
+			if (settings.errorSeverity !== null) {
 				lintArgs.push(`--error-severity=${settings.errorSeverity}`);
 			}
-			if (settings.warningSeverity !== undefined) {
+			if (settings.warningSeverity !== null) {
 				lintArgs.push(`--warning-severity=${settings.warningSeverity}`);
 			}
 
