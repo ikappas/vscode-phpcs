@@ -1,31 +1,31 @@
 {
-	"name": "phpcs-server",
-	"description": "PHP Code Sniffer server.",
-	"version": "0.7.0",
-	"author": "Ioannis Kappas",
-	"publisher": "ikappas",
-	"license": "MIT",
-	"engines": {
-		"node": "*"
-	},
-	"homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/ikappas/vscode-phpcs.git"
-	},
-	"bugs": {
-		"url": "https://github.com/ikappas/vscode-phpcs/issues"
-	},
-	"dependencies": {
-		"vscode-languageserver": "^3.0.4",
-		"minimatch": "^3.0.3"
-	},
-	"devDependencies": {
-		"@types/node": "^6.0.52",
-		"typescript": "^2.1.5"
-	},
-	"scripts": {
-		"compile": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc -p .",
-		"watch": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc --watch -p ."
-	}
+  "name": "phpcs-server",
+  "description": "PHP Code Sniffer server.",
+  "version": "0.7.0",
+  "author": "Ioannis Kappas",
+  "publisher": "ikappas",
+  "license": "MIT",
+  "engines": {
+    "node": "*"
+  },
+  "homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ikappas/vscode-phpcs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ikappas/vscode-phpcs/issues"
+  },
+  "dependencies": {
+    "vscode-languageserver": "^3.0.4",
+    "minimatch": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^6.0.52",
+    "typescript": "^2.1.5"
+  },
+  "scripts": {
+    "compile": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc -p .",
+    "watch": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc --watch -p ."
+  }
 }
