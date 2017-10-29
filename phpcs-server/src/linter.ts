@@ -14,6 +14,7 @@ import fs = require("fs");
 import cc = require("./utils/charcode");
 
 let minimatch = require("minimatch");
+let semver = require("semver");
 
 // interface PhpcsReport {
 // 	totals: PhpcsReportTotals;
@@ -316,10 +317,7 @@ export class PhpcsLinter {
 			let lintArgs = [ '--report=json' ];
 
 			// -q (quiet) option is available since phpcs 2.6.2
-			if (this.version.major > 2
-			|| (this.version.major === 2 && this.version.minor > 6)
-			|| (this.version.major === 2 && this.version.minor === 6 && this.version.patch >= 2)
-			) {
+			if (semver.gte(this.version, '2.6.2')) {
 				lintArgs.push('-q');
 			}
 
@@ -328,9 +326,7 @@ export class PhpcsLinter {
 			}
 
 			// --encoding option is available since 1.3.0
-			if (this.version.major > 1
-			|| (this.version.major === 1 && this.version.minor >= 3)
-			) {
+			if (semver.gte(this.version, '1.3.0')) {
 				lintArgs.push('--encoding=UTF-8');
 			}
 
@@ -341,7 +337,7 @@ export class PhpcsLinter {
 			// Check if file should be ignored (Skip for in-memory documents)
 			if ( filePath !== undefined ) {
 				if (settings.ignorePatterns !== null && settings.ignorePatterns.length) {
-					if (this.version.major > 2) {
+					if (semver.gte(this.version, '3.0.0')) {
 						// PHPCS v3 and up support this with STDIN files
 						lintArgs.push(`--ignore=${settings.ignorePatterns.join(',')}`);
 					} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
