@@ -12,9 +12,8 @@ import cp = require("child_process");
 import path = require("path");
 import fs = require("fs");
 import cc = require("./utils/charcode");
-
-let minimatch = require("minimatch");
-let semver = require("semver");
+import minimatch = require("minimatch");
+import semver = require("semver");
 
 // interface PhpcsReport {
 // 	totals: PhpcsReportTotals;
@@ -50,12 +49,6 @@ export interface PhpcsSettings {
 	ignorePatterns?: string[];
 	warningSeverity?: number;
 	errorSeverity?: number;
-}
-
-export interface PhpcsVersion {
-	major: number;
-	minor: number;
-	patch: number;
 }
 
 export class PhpcsPathResolver {
@@ -254,9 +247,9 @@ function makeDiagnostic(document: TextDocument, entry: PhpcsMessageEntry, option
 export class PhpcsLinter {
 
 	private path: string;
-	private version: PhpcsVersion;
+	private version: string;
 
-	private constructor(path: string, version: PhpcsVersion) {
+	private constructor(path: string, version: string) {
 		this.path = path;
 		this.version = version;
 	}
@@ -282,17 +275,11 @@ export class PhpcsLinter {
 						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer dependency manager to install it in your project locally.");
 					}
 
-					let versionPattern: RegExp = /^PHP_CodeSniffer version (\d+)\.(\d+)\.(\d+)/i;
-					let versionMatches = stdout.match(versionPattern);
+					const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
+					const versionMatches = stdout.match(versionPattern);
+					const executableVersion = versionMatches[1];
 
-					let version: PhpcsVersion = { major: 0, minor: 0, patch: 0 };
-					if (versionMatches !== null) {
-						version.major = Number.parseInt(versionMatches[1], 10);
-						version.minor = Number.parseInt(versionMatches[2], 10);
-						version.patch = Number.parseInt(versionMatches[3], 10);
-					}
-
-					resolve(new PhpcsLinter(phpcsPath, version));
+					resolve(new PhpcsLinter(phpcsPath, executableVersion));
 				});
 			} catch(e) {
 				reject(e);
