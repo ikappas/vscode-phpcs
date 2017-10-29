@@ -6,27 +6,22 @@
 
 Integrates [phpcs](https://github.com/squizlabs/PHP_CodeSniffer.git) into VS Code.
 
-## Development setup
+## Setup Development Version
 
-- install the VS Code [npm extension](https://marketplace.visualstudio.com/items?itemName=eg2.vscode-npm-script)
-- clone this repository
-- open the cloned repository folder using VS Code
+- install the [Visual Studio Code](https://code.visualstudio.com/) [npm extension](https://marketplace.visualstudio.com/items?itemName=eg2.vscode-npm-script)
+- clone this repository and checkout `develop` branch
+- open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
 - run VS Code task `npm install`
 
-## Developing the server
+## Run/Debug Development Version
 
-- open VS Code on `phpcs-server`
-- run `npm run compile` or `npm run watch` to build the server and copy it into the `phpcs` folder
-- to debug press F5 which attaches a debugger to the server
+To run the development version of the `phpcs` extension:
 
-## Developing the extension/client
-
-To test the development version of the `phpcs` extension:
-
-- open the cloned repository folder using VS Code
-- select VS Code folder `phpcs`
+- open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
 - select sidebar option `Debug`
-- select option `Client + Server` from the Debug dropdown menu
-- press `Start Debugging`
+- select option `Client + Server` from the Debug drop-down menu
+- press `Start Debugging` button or hit F5
 
-> A new VS Code window will be opened, automatically using the development version of the `phpcs` extension.
+This will launch a new VS Code window named `Extension Development Host` will be opened, automatically using the development version of the `phpcs` extension.
+
+> If you don't have an open php file on your `Extension Development Host` the server debug session will timeout and you will need to relaunch it from the debug panel.
