@@ -22,6 +22,6 @@ To run the development version of the `phpcs` extension:
 - select option `Client + Server` from the Debug drop-down menu
 - press `Start Debugging` button or hit F5
 
-This will launch a new VS Code window named `Extension Development Host` will be opened, automatically using the development version of the `phpcs` extension.
+This will launch a new VS Code window named `Extension Development Host`, automatically using the development version of the `phpcs` extension.
 
 > If you don't have an open php file on your `Extension Development Host` the server debug session will timeout and you will need to relaunch it from the debug panel.
