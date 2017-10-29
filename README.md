@@ -1,11 +1,17 @@
 # vscode-phpcs
 
+[![Current Version](https://vsmarketplacebadge.apphb.com/version/ikappas.phpcs.svg)](https://marketplace.visualstudio.com/items?itemName=ikappas.phpcs)
+[![Install Count](https://vsmarketplacebadge.apphb.com/installs/ikappas.phpcs.svg)](https://marketplace.visualstudio.com/items?itemName=ikappas.phpcs)
+[![Open Issues](https://vsmarketplacebadge.apphb.com/rating/ikappas.phpcs.svg)](https://marketplace.visualstudio.com/items?itemName=ikappas.phpcs)
+
 Integrates [phpcs](https://github.com/squizlabs/PHP_CodeSniffer.git) into VS Code.
 
 ## Development setup
 
-- run npm install inside the `phpcs` and `phpcs-server` folders
-- open VS Code on `phpcs` and `phpcs-server`
+- install the VS Code [npm extension](https://marketplace.visualstudio.com/items?itemName=eg2.vscode-npm-script)
+- clone this repository
+- open the cloned repository folder using VS Code
+- run VS Code task `npm install`
 
 ## Developing the server
 
@@ -15,5 +21,12 @@ Integrates [phpcs](https://github.com/squizlabs/PHP_CodeSniffer.git) into VS Cod
 
 ## Developing the extension/client
 
-- open VS Code on `phpcs`
-- run F5 to build and debug the extension
+To test the development version of the `phpcs` extension:
+
+- open the cloned repository folder using VS Code
+- select VS Code folder `phpcs`
+- select sidebar option `Debug`
+- select option `Client + Server` from the Debug dropdown menu
+- press `Start Debugging`
+
+> A new VS Code window will be opened, automatically using the development version of the `phpcs` extension.
