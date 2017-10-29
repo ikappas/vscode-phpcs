@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "vscode-languageserver": "^3.4.3",
-    "minimatch": "^3.0.4"
+    "minimatch": "^3.0.4",
+    "semver": "^5.4.1"
   },
   "scripts": {
     "installServer": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json",
