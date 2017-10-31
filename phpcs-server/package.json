@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "vscode-languageserver": "^3.4.3",
+    "cross-spawn": "^5.1.0",
     "minimatch": "^3.0.4",
     "semver": "^5.4.1"
   },
