@@ -14,25 +14,10 @@ import fs = require("fs");
 import cc = require("./utils/charcode");
 import minimatch = require("minimatch");
 import semver = require("semver");
+import cs = require("cross-spawn");
+import os = require("os");
 
-// interface PhpcsReport {
-// 	totals: PhpcsReportTotals;
-// 	files: Array<PhpcsReportFile>;
-// }
-
-// interface PhpcsReportTotals{
-// 	errors: number;
-// 	warnings: number;
-// 	fixable: number;
-// }
-
-interface PhpcsReportFile {
-	errors: number;
-	warnings: number;
-	messages: Array<PhpcsMessageEntry>;
-}
-
-interface PhpcsMessageEntry {
+interface PhpcsMessage {
 	message: string;
 	severity: number;
 	type: string;
@@ -187,7 +172,7 @@ interface DiagnosticOptions {
 	showSource: boolean;
 }
 
-function makeDiagnostic(document: TextDocument, entry: PhpcsMessageEntry, options: DiagnosticOptions ): Diagnostic {
+function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, options: DiagnosticOptions ): Diagnostic {
 
 	let lines = document.getText().split("\n");
 	let line = entry.line - 1;
@@ -246,12 +231,12 @@ function makeDiagnostic(document: TextDocument, entry: PhpcsMessageEntry, option
 
 export class PhpcsLinter {
 
-	private path: string;
-	private version: string;
+	private executablePath: string;
+	private executableVersion: string;
 
-	private constructor(path: string, version: string) {
-		this.path = path;
-		this.version = version;
+	private constructor(executablePath: string, executableVersion: string) {
+		this.executablePath = executablePath;
+		this.executableVersion = executableVersion;
 	}
 
 	/**
@@ -261,8 +246,8 @@ export class PhpcsLinter {
 		return new Promise<any>((resolve, reject) => {
 			try {
 				let phpcsPathResolver = new PhpcsPathResolver(rootPath);
-				let phpcsPath = phpcsPathResolver.resolve();
-				let command = phpcsPath;
+				let executablePath = phpcsPathResolver.resolve();
+				let command = executablePath;
 
 				// Make sure we escape spaces in paths on Windows.
 				if ( /^win/.test(process.platform) ) {
@@ -279,7 +264,7 @@ export class PhpcsLinter {
 					const versionMatches = stdout.match(versionPattern);
 					const executableVersion = versionMatches[1];
 
-					resolve(new PhpcsLinter(phpcsPath, executableVersion));
+					resolve(new PhpcsLinter(executablePath, executableVersion));
 				});
 			} catch(e) {
 				reject(e);
@@ -287,13 +272,20 @@ export class PhpcsLinter {
 		});
 	}
 
-	public lint(document: TextDocument, settings: PhpcsSettings, _rootPath?: string): Thenable<Diagnostic[]> {
+	public async lint(document: TextDocument, settings: PhpcsSettings, _rootPath?: string): Promise<Diagnostic[]> {
 		return new Promise<Diagnostic[]>((resolve, reject) => {
 
 			// Process linting paths.
 			let filePath = Files.uriToFilePath(document.uri);
+
+			// Make sure we capitalize the drive letter in paths on Windows.
+			if (filePath !== undefined && /^win/.test(process.platform)) {
+				let pathRoot: string = path.parse(filePath).root;
+				let noDrivePath = filePath.slice(Math.max(pathRoot.length - 1, 0));
+				filePath = path.join(pathRoot.toUpperCase(), noDrivePath);
+			}
+
 			let fileText = document.getText();
-			let executablePath = this.path;
 
 			// Return empty on empty text.
 			if (fileText === '') {
@@ -304,7 +296,7 @@ export class PhpcsLinter {
 			let lintArgs = [ '--report=json' ];
 
 			// -q (quiet) option is available since phpcs 2.6.2
-			if (semver.gte(this.version, '2.6.2')) {
+			if (semver.gte(this.executableVersion, '2.6.2')) {
 				lintArgs.push('-q');
 			}
 
@@ -313,7 +305,7 @@ export class PhpcsLinter {
 			}
 
 			// --encoding option is available since 1.3.0
-			if (semver.gte(this.version, '1.3.0')) {
+			if (semver.gte(this.executableVersion, '1.3.0')) {
 				lintArgs.push('--encoding=UTF-8');
 			}
 
@@ -324,7 +316,7 @@ export class PhpcsLinter {
 			// Check if file should be ignored (Skip for in-memory documents)
 			if ( filePath !== undefined ) {
 				if (settings.ignorePatterns !== null && settings.ignorePatterns.length) {
-					if (semver.gte(this.version, '3.0.0')) {
+					if (semver.gte(this.executableVersion, '3.0.0')) {
 						// PHPCS v3 and up support this with STDIN files
 						lintArgs.push(`--ignore=${settings.ignorePatterns.join(',')}`);
 					} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
@@ -341,74 +333,92 @@ export class PhpcsLinter {
 				lintArgs.push(`--warning-severity=${settings.warningSeverity}`);
 			}
 
-			// Make sure we escape spaces in paths on Windows.
-			if ( /^win/.test(process.platform) ) {
-				if (/\s/g.test(filePath)) {
-					filePath = `"${filePath}"`;
-				}
-				if (/\s/g.test(executablePath)) {
-					executablePath = `"${executablePath}"`;
+			let text = fileText;
+
+			// Determine the method of setting the file name
+			if (filePath !== undefined) {
+				switch (true) {
+
+					// PHPCS 2.6 and above support sending the filename in a flag
+					case semver.gte(this.executableVersion, '2.6.0'):
+						lintArgs.push(`--stdin-path=${filePath}`);
+						break;
+
+					// PHPCS 2.x.x before 2.6.0 supports putting the name in the start of the stream
+					case semver.satisfies(this.executableVersion, '>=2.0.0 <2.6.0'):
+						// TODO: This needs to be document specific.
+						const eolChar = os.EOL;
+						text = `phpcs_input_file: ${filePath}${eolChar}${fileText}`;
+						break;
+
+					// PHPCS v1 supports stdin, but ignores all filenames.
+					default:
+						// Nothing to do
+						break;
 				}
 			}
 
-			let command = null;
-			let args = null;
-			let phpcs = null;
+			// Finish off the parameter list
+			lintArgs.push('-');
 
-			let options = {
+			const forcedKillTime = 1000 * 60 * 5; // ms * s * m: 5 minutes
+			const options = {
 				env: process.env,
 				encoding: "utf8",
-				timeout: 0,
-				maxBuffer: 1024 * 1024,
-				detached: true,
-				windowsVerbatimArguments: true,
+				timeout: forcedKillTime,
 			};
 
-			if ( /^win/.test(process.platform) ) {
-				command = process.env.comspec || "cmd.exe";
-				args = ['/s', '/c', '"', executablePath].concat(lintArgs).concat('"');
-				phpcs = cp.execFile( command, args, options );
-			} else {
-				command = executablePath;
-				args = lintArgs;
-				phpcs = cp.spawn( command, args, options );
-			}
+			let phpcs = cs.spawn(this.executablePath, lintArgs, options);
 
-			let result = "";
-
-			phpcs.stderr.on("data", (buffer: Buffer) => {
-				result += buffer.toString();
-			});
-
+			let stdout = '';
 			phpcs.stdout.on("data", (buffer: Buffer) => {
-				result += buffer.toString();
+				stdout += buffer.toString();
 			});
 
-			phpcs.on("close", (_code: string) => {
+			let stderr = '';
+			phpcs.stderr.on("data", (buffer: Buffer) => {
+				stderr += buffer.toString();
+			});
+
+			phpcs.on("close", () => {
 				try {
-					result = result.toString().trim();
+					let result = stdout.toString().trim();
 					let match = null;
 
 					// Determine whether we have an error and report it otherwise send back the diagnostics.
 					if (match = result.match(/^ERROR:\s?(.*)/i)) {
 						let error = match[1].trim();
 						if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
-							throw { message: `The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.` };
+							throw new Error(`The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.`);
 						}
-						throw { message: error };
+						throw new Error(error);
 					} else if ( match = result.match(/^FATAL\s?ERROR:\s?(.*)/i)) {
 						let error = match[1].trim();
 						if (match = error.match(/^Uncaught exception '.*' with message '(.*)'/)) {
-							throw { message: match[1] };
+							throw new Error(match[1]);
 						}
-						throw { message: error };
+						throw new Error(error);
 					}
 
 					let diagnostics: Diagnostic[] = [];
-					let reportJson = JSON.parse(result);
-					let fileReport: PhpcsReportFile = reportJson.files.STDIN;
+					let data = JSON.parse(result);
 
-					fileReport.messages.forEach((message) => {
+					let messages : Array<PhpcsMessage>;
+					if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
+						const fileRealPath = fs.realpathSync(filePath);
+						if (!data.files[fileRealPath]) {
+							resolve([]);
+						}
+						({ messages } = data.files[fileRealPath]);
+					} else {
+						// PHPCS v1 can't associate a filename with STDIN input
+						if (!data.files.STDIN) {
+						resolve([]);
+						}
+						({ messages } = data.files.STDIN);
+					}
+
+					messages.map((message) => {
 						diagnostics.push(makeDiagnostic(document, message, {
 							showSource: settings.showSource
 						}));
@@ -421,7 +431,8 @@ export class PhpcsLinter {
 				}
 			});
 
-			phpcs.stdin.write( fileText );
+			phpcs.stdin.setDefaultEncoding('utf8');
+			phpcs.stdin.write(text);
 			phpcs.stdin.end();
 		});
 	}
