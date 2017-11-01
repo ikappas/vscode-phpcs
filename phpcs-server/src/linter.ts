@@ -30,6 +30,7 @@ interface PhpcsMessage {
 export interface PhpcsSettings {
 	enable: boolean;
 	executablePath: string;
+	composerJsonPath: string;
 	standard: string;
 	showSources: boolean;
 	showWarnings: boolean;
@@ -70,13 +71,34 @@ class GlobalPhpcsPathResolver extends BasePhpcsPathResolver {
 
 class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 
+	protected readonly composerJsonPath: string;
+	protected readonly composerLockPath: string;
+
+	/**
+	 * Class constructor.
+	 *
+	 * @param workspacePath The workspace path.
+	 * @param composerJsonPath The path to composer.json.
+	 */
+	constructor(workspacePath: string, composerJsonPath?: string) {
+		super(workspacePath);
+
+		if (composerJsonPath !== undefined) {
+			this.composerJsonPath = fs.realpathSync(composerJsonPath);
+		} else {
+			this.composerJsonPath = path.join(workspacePath, 'composer.json');
+		}
+
+		this.composerLockPath = path.join(path.dirname(this.composerJsonPath), 'composer.lock');
+	}
+
 	/**
 	 * Determine whether composer.json exists at the root path.
 	 */
 	hasComposerJson(): boolean {
 		try {
-			return fs.existsSync(path.join(this.workspacePath, "composer.json"));
-		} catch(exception) {
+			return fs.existsSync(this.composerJsonPath);
+		} catch(error) {
 			return false;
 		}
 	}
@@ -86,8 +108,8 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 	 */
 	hasComposerLock(): boolean {
 	   try {
-			return fs.existsSync(path.join(this.workspacePath, "composer.lock"));
-		} catch(exception) {
+			return fs.existsSync(this.composerLockPath);
+		} catch(error) {
 			return false;
 		}
 	}
@@ -99,8 +121,8 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 		// Safely load composer.lock
 		let dependencies = null;
 		try {
-			dependencies = JSON.parse(fs.readFileSync(path.join(this.workspacePath, "composer.lock"), "utf8"));
-		} catch(exception) {
+			dependencies = JSON.parse(fs.readFileSync(this.composerLockPath, "utf8"));
+		} catch(error) {
 			dependencies = {};
 		}
 
@@ -125,25 +147,26 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 	 * Get the composer vendor path.
 	 */
 	getVendorPath(): string {
-		let vendorPath = path.join(this.workspacePath, "vendor", "bin", this.phpcsExecutableFile);
+		let basePath = path.dirname(this.composerJsonPath);
+		let vendorPath = path.join(basePath, "vendor", "bin", this.phpcsExecutableFile);
 
 		// Safely load composer.json
 		let config = null;
 		try {
-			config = JSON.parse(fs.readFileSync(path.join(this.workspacePath, "composer.json"), "utf8"));
+			config = JSON.parse(fs.readFileSync(this.composerJsonPath, "utf8"));
 		}
-		catch (exception) {
+		catch (error) {
 			config = {};
 		}
 
 		// Check vendor-bin configuration
 		if (config["config"] && config["config"]["vendor-dir"]) {
-			vendorPath = path.join(this.workspacePath, config["config"]["vendor-dir"], "bin", this.phpcsExecutableFile);
+			vendorPath = path.join(basePath, config["config"]["vendor-dir"], "bin", this.phpcsExecutableFile);
 		}
 
 		// Check bin-bin configuration
 		if (config["config"] && config["config"]["bin-dir"]) {
-			vendorPath = path.join(this.workspacePath, config["config"]["bin-dir"], this.phpcsExecutableFile);
+			vendorPath = path.join(basePath, config["config"]["bin-dir"], this.phpcsExecutableFile);
 		}
 
 		return vendorPath;
@@ -157,19 +180,19 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 
 				// Determine whether composer is installed.
 				if (this.hasComposerLock()) {
-
 					// Determine whether vendor/bin/phpcs exists only when project depends on phpcs.
 					if (this.hasComposerDependency()) {
 						let vendorPath = this.getVendorPath();
 						if (fs.existsSync(vendorPath)) {
 							resolvedPath = vendorPath;
 						} else {
-							throw `Composer phpcs dependency is configured but was not found under ${vendorPath}. You may need to update your dependencies using "composer update".`;
+							let relativeVendorPath = path.relative(this.workspacePath, vendorPath);
+							throw new Error(`Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to install your dependencies using "composer install".`);
 						}
 					}
 
 				} else {
-					throw `A composer configuration file was found at the root of your project but seems uninitialized. You may need to initialize your dependencies using "composer install".`;
+					throw new Error(`A composer configuration file was found at the root of your project but seems uninitialized. You may need to initialize your dependencies using "composer install".`);
 				}
 			}
 		}
@@ -181,9 +204,9 @@ export class PhpcsPathResolver extends BasePhpcsPathResolver {
 
 	private resolvers: Array<BasePhpcsPathResolver> = [];
 
-	constructor(workspacePath: string, _settings: PhpcsSettings) {
+	constructor(workspacePath: string, settings: PhpcsSettings) {
 		super(workspacePath);
-		this.resolvers.push( new ComposerPhpcsPathResolver( workspacePath ) );
+		this.resolvers.push(new ComposerPhpcsPathResolver(workspacePath, settings.composerJsonPath) );
 		this.resolvers.push( new GlobalPhpcsPathResolver( workspacePath ) );
 	}
 
