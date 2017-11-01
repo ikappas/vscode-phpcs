@@ -440,26 +440,28 @@ export class PhpcsLinter {
 					let result = stdout.trim();
 					let match = null;
 
-					if ( stderr !== '' || stdout === '' ) {
+					if (stderr !== '') {
 
 						result = stderr;
 
-						// Determine whether we have an error and report it otherwise send back the diagnostics.
-						if (match = result.match(/^ERROR:\s?(.*)/i)) {
-							let error = match[1].trim();
-							if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
-								throw new Error(`The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.`);
-							}
-							throw new Error(error);
-						} else if (match = result.match(/^(?:PHP\s?)FATAL\s?ERROR:\s?(.*)/i)) {
+						if (match = result.match(/^(?:PHP\s?)FATAL\s?ERROR:\s?(.*)/i)) {
 							let error = match[1].trim();
 							if (match = error.match(/^Uncaught exception '.*' with message '(.*)'/)) {
 								throw new Error(match[1]);
 							}
 							throw new Error(error);
-						} else {
-							throw new Error(`Unknown error ocurred. Please verify that ${this.executablePath} ${lintArgs.join(' ')} returns a valid json object.`);
 						}
+
+						throw new Error(`Unknown error ocurred. Please verify that ${this.executablePath} ${lintArgs.join(' ')} returns a valid json object.`);
+					}
+
+					// Determine whether we have an error and report it otherwise send back the diagnostics.
+					if (match = result.match(/^ERROR:\s?(.*)/i)) {
+						let error = match[1].trim();
+						if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
+							throw new Error(`The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.`);
+						}
+						throw new Error(error);
 					}
 
 					let diagnostics: Diagnostic[] = [];
