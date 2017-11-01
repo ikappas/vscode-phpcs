@@ -19,7 +19,7 @@ import {
 } from 'vscode-languageserver';
 
 import * as proto from "./protocol";
-import { PhpcsLinter, PhpcsSettings } from "./linter";
+import { PhpcsLinter, PhpcsSettings, PhpcsPathResolver } from "./linter";
 
 class PhpcsServer {
 
@@ -96,7 +96,14 @@ class PhpcsServer {
 	private async onDidChangeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
 		try {
 			this.settings = params.settings.phpcs;
-			this.linter = await PhpcsLinter.create(this.workspacePath, this.settings.executablePath);
+
+			let executablePath = this.settings.executablePath;
+			if (executablePath === null) {
+				let executablePathResolver = new PhpcsPathResolver(this.workspacePath, this.settings);
+				executablePath = await executablePathResolver.resolve();
+			}
+
+			this.linter = await PhpcsLinter.create(executablePath);
 			this.ready = true;
 			this.validateMany(this.documents.all());
 		} catch(error) {
@@ -211,7 +218,7 @@ class PhpcsServer {
 	public validateSingle(document: TextDocument): void {
 		if (this.ready && this._validating[ document.uri ] === undefined ) {
 			this.sendStartValidationNotification(document);
-			this.linter.lint(document, this.settings, this.workspacePath).then(diagnostics => {
+			this.linter.lint(document, this.settings).then(diagnostics => {
 				this.sendEndValidationNotification(document);
 				this.sendDiagnostics({ uri: document.uri, diagnostics });
 			}, (error) => {

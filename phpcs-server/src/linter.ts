@@ -181,7 +181,7 @@ export class PhpcsPathResolver extends BasePhpcsPathResolver {
 
 	private resolvers: Array<BasePhpcsPathResolver> = [];
 
-	constructor(workspacePath: string) {
+	constructor(workspacePath: string, _settings: PhpcsSettings) {
 		super(workspacePath);
 		this.resolvers.push( new ComposerPhpcsPathResolver( workspacePath ) );
 		this.resolvers.push( new GlobalPhpcsPathResolver( workspacePath ) );
@@ -274,13 +274,8 @@ export class PhpcsLinter {
 	/**
 	 * Create an instance of the PhpcsLinter.
 	 */
-	static async create(workspacePath: string, executablePath: string): Promise<PhpcsLinter> {
+	static async create(executablePath: string): Promise<PhpcsLinter> {
 		try {
-
-			if ( executablePath === null) {
-				let executablePathResolver = new PhpcsPathResolver(workspacePath);
-				executablePath = await executablePathResolver.resolve();
-			}
 
 			let command = executablePath;
 
@@ -307,7 +302,7 @@ export class PhpcsLinter {
 		}
 	}
 
-	public async lint(document: TextDocument, settings: PhpcsSettings, _rootPath?: string): Promise<Diagnostic[]> {
+	public async lint(document: TextDocument, settings: PhpcsSettings): Promise<Diagnostic[]> {
 		return new Promise<Diagnostic[]>((resolve, reject) => {
 
 			// Process linting paths.
