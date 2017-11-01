@@ -48,11 +48,11 @@ abstract class BasePhpcsPathResolver {
 		this.phpcsExecutableFile = `phpcs${extension}`;
 	}
 
-	abstract resolve(): string;
+	abstract async resolve(): Promise<string>;
 }
 
 class GlobalPhpcsPathResolver extends BasePhpcsPathResolver {
-	resolve(): string {
+	async resolve(): Promise<string> {
 		let resolvedPath = null;
 		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
 		let globalPaths: string[] = process.env.PATH.split(pathSeparator);
@@ -149,7 +149,7 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 		return vendorPath;
 	}
 
-	resolve(): string {
+	async resolve(): Promise<string> {
 		let resolvedPath = null;
 		if (this.workspacePath) {
 			// Determine whether composer.json exists in our workspace root.
@@ -187,16 +187,15 @@ export class PhpcsPathResolver extends BasePhpcsPathResolver {
 		this.resolvers.push( new GlobalPhpcsPathResolver( workspacePath ) );
 	}
 
-	resolve(): string {
+	async resolve(): Promise<string> {
 		let resolvedPath: string = null;
-		this.resolvers.some((resolver) => {
-			let resolverPath = resolver.resolve();
+		for (var i = 0, len = this.resolvers.length; i < len; i++) {
+			let resolverPath = await this.resolvers[i].resolve();
 			if (resolvedPath !== resolverPath) {
 				resolvedPath = resolverPath;
-				return true;
+				break;
 			}
-			return false;
-		});
+		}
 		return resolvedPath;
 	}
 }
@@ -280,7 +279,7 @@ export class PhpcsLinter {
 
 			if ( executablePath === null) {
 				let executablePathResolver = new PhpcsPathResolver(workspacePath);
-				executablePath = executablePathResolver.resolve();
+				executablePath = await executablePathResolver.resolve();
 			}
 
 			let command = executablePath;
