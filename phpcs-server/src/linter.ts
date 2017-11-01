@@ -31,9 +31,10 @@ export interface PhpcsSettings {
 	enable: boolean;
 	standard: string;
 	showSources: boolean;
+	showWarnings: boolean;
 	ignorePatterns?: string[];
-	warningSeverity?: number;
-	errorSeverity?: number;
+	warningSeverity: number;
+	errorSeverity: number;
 }
 
 export class PhpcsPathResolver {
@@ -332,12 +333,13 @@ export class PhpcsLinter {
 				}
 			}
 
-			if (settings.errorSeverity !== null) {
-				lintArgs.push(`--error-severity=${settings.errorSeverity}`);
+			lintArgs.push(`--error-severity=${settings.errorSeverity}`);
+
+			let warningSeverity = settings.warningSeverity;
+			if (settings.showWarnings === false) {
+				warningSeverity = 0;
 			}
-			if (settings.warningSeverity !== null) {
-				lintArgs.push(`--warning-severity=${settings.warningSeverity}`);
-			}
+			lintArgs.push(`--warning-severity=${warningSeverity}`);
 
 			let text = fileText;
 
