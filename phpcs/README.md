@@ -137,13 +137,18 @@ This setting controls the files and directories to ignore when linting your docu
 
 ### **phpcs.errorSeverity**
 
-[ Optional | **Type:** `number` | **Default:** `null` ]
-This setting controls the error severity level used by `phpcs`. You may specify an integer value.
+[ Optional | **Type:** `number` | **Default:** `5` ]
+The minimum severity an error must have to be displayed. You may specify an integer value.
 
 ### **phpcs.warningSeverity**
 
-[ Optional | **Type:** `number` | **Default:** `null` ]
-This setting controls the warning severity level used by `phpcs`. You may specify an integer value.
+[ Optional | **Type:** `number` | **Default:** `5` ]
+The minimum severity a warning must have to be displayed. You may specify an integer value.
+
+### **phpcs.showWarnings**
+
+[ Optional | **Default**: `true` ]
+Control whether warnings are displayed.
 
 ### **phpcs.showSources**
 
