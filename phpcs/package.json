@@ -75,6 +75,12 @@
           "default": null,
           "description": "Optional. Control the warning severity level."
         },
+        "phpcs.showWarnings": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Control whether warnings are displayed."
+        },
         "phpcs.showSources": {
           "scope": "resource",
           "type": "boolean",
