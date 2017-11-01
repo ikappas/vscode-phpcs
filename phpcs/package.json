@@ -75,11 +75,11 @@
           "default": null,
           "description": "Optional. Control the warning severity level."
         },
-        "phpcs.showSource": {
+        "phpcs.showSources": {
           "scope": "resource",
           "type": "boolean",
           "default": false,
-          "description": "Optional. Control whether sniff sources are displayed."
+          "description": "Show sniff source codes in diagnostic messages."
         },
         "phpcs.trace.server": {
           "scope": "window",
