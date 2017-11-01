@@ -166,6 +166,13 @@ Show sniff source codes in diagnostic messages.
 [ Optional | **Default**: `off` ]
 This setting controls whether the trace server is activated. Possible values you can use is `off`, `messages` or `verbose`.
 
+## Advanced Configuration
+
+### **phpcs.composerJsonPath**
+
+[ Optional | **Default**: `composer.json` ]
+This setting allows you to override the path that is searched a composer.json file.
+
 ## Acknowledgements
 
 The extension architecture is based off of the [Language Server Node Example](https://github.com/Microsoft/vscode-languageserver-node-example).
