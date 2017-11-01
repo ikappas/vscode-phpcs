@@ -29,6 +29,7 @@ interface PhpcsMessage {
 
 export interface PhpcsSettings {
 	enable: boolean;
+	executablePath: string;
 	standard: string;
 	showSources: boolean;
 	showWarnings: boolean;
@@ -37,23 +38,44 @@ export interface PhpcsSettings {
 	errorSeverity: number;
 }
 
-export class PhpcsPathResolver {
-	private rootPath: string;
-	private phpcsPath: string;
-	private phpcsExecutable : string;
+abstract class BasePhpcsPathResolver {
+	protected workspacePath: string;
+	protected phpcsExecutableFile: string;
 
-	constructor(rootPath: string) {
-		this.rootPath = rootPath;
+	constructor(workspacePath: string) {
+		this.workspacePath = workspacePath;
 		let extension = /^win/.test(process.platform) ? ".bat" : "";
-		this.phpcsExecutable = `phpcs${extension}`;
+		this.phpcsExecutableFile = `phpcs${extension}`;
 	}
+
+	abstract resolve(): string;
+}
+
+class GlobalPhpcsPathResolver extends BasePhpcsPathResolver {
+	resolve(): string {
+		let resolvedPath = null;
+		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
+		let globalPaths: string[] = process.env.PATH.split(pathSeparator);
+		globalPaths.some((globalPath: string) => {
+			let testPath = path.join( globalPath, this.phpcsExecutableFile );
+			if (fs.existsSync(testPath)) {
+				resolvedPath = testPath;
+				return true;
+			}
+			return false;
+		});
+		return resolvedPath;
+	}
+}
+
+class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 
 	/**
 	 * Determine whether composer.json exists at the root path.
 	 */
 	hasComposerJson(): boolean {
 		try {
-			return fs.existsSync(path.join(this.rootPath, "composer.json"));
+			return fs.existsSync(path.join(this.workspacePath, "composer.json"));
 		} catch(exception) {
 			return false;
 		}
@@ -64,7 +86,7 @@ export class PhpcsPathResolver {
 	 */
 	hasComposerLock(): boolean {
 	   try {
-			return fs.existsSync(path.join(this.rootPath, "composer.lock"));
+			return fs.existsSync(path.join(this.workspacePath, "composer.lock"));
 		} catch(exception) {
 			return false;
 		}
@@ -73,49 +95,42 @@ export class PhpcsPathResolver {
 	/**
 	 * Determine whether phpcs is set as a composer dependency.
 	 */
-	hasComposerPhpcsDependency(): boolean {
+	hasComposerDependency(): boolean {
 		// Safely load composer.lock
 		let dependencies = null;
 		try {
-			dependencies = JSON.parse(fs.readFileSync(path.join(this.rootPath, "composer.lock"), "utf8"));
+			dependencies = JSON.parse(fs.readFileSync(path.join(this.workspacePath, "composer.lock"), "utf8"));
 		} catch(exception) {
 			dependencies = {};
 		}
 
 		// Determine phpcs dependency.
-		let result = false;
-		let BreakException = {};
-		if (dependencies["packages"] && dependencies["packages-dev"]) {
-			try {
-				[ dependencies["packages"], dependencies["packages-dev"]].forEach(pkgs => {
-					let match = pkgs.filter((pkg: any) => {
-						return pkg.name === "squizlabs/php_codesniffer";
-					});
-					if (match.length !== 0) {
-						throw BreakException;
-					}
-				});
-			} catch(exception) {
-				if (exception === BreakException) {
-					result = true;
-				} else {
-					throw exception;
-				}
-			}
+		let search = [];
+		if (dependencies["packages-dev"]) {
+			search.push(dependencies["packages-dev"]);
 		}
-		return result;
+		if (dependencies["packages"]) {
+			search.push(dependencies["packages"]);
+		}
+
+		return search.some(pkgs => {
+			let match = pkgs.filter((pkg: any) => {
+				return pkg.name === "squizlabs/php_codesniffer";
+			});
+			return match.length !== 0
+		});
 	}
 
 	/**
 	 * Get the composer vendor path.
 	 */
 	getVendorPath(): string {
-		let vendorPath = path.join(this.rootPath, "vendor", "bin", this.phpcsExecutable);
+		let vendorPath = path.join(this.workspacePath, "vendor", "bin", this.phpcsExecutableFile);
 
 		// Safely load composer.json
 		let config = null;
 		try {
-			config = JSON.parse(fs.readFileSync(path.join(this.rootPath, "composer.json"), "utf8"));
+			config = JSON.parse(fs.readFileSync(path.join(this.workspacePath, "composer.json"), "utf8"));
 		}
 		catch (exception) {
 			config = {};
@@ -123,32 +138,20 @@ export class PhpcsPathResolver {
 
 		// Check vendor-bin configuration
 		if (config["config"] && config["config"]["vendor-dir"]) {
-			vendorPath = path.join(this.rootPath, config["config"]["vendor-dir"], "bin", this.phpcsExecutable);
+			vendorPath = path.join(this.workspacePath, config["config"]["vendor-dir"], "bin", this.phpcsExecutableFile);
 		}
 
 		// Check bin-bin configuration
 		if (config["config"] && config["config"]["bin-dir"]) {
-			vendorPath = path.join(this.rootPath, config["config"]["bin-dir"], this.phpcsExecutable);
+			vendorPath = path.join(this.workspacePath, config["config"]["bin-dir"], this.phpcsExecutableFile);
 		}
 
 		return vendorPath;
 	}
 
 	resolve(): string {
-		this.phpcsPath = this.phpcsExecutable;
-
-		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
-		let globalPaths: string[] = process.env.PATH.split(pathSeparator);
-		globalPaths.some((globalPath: string) => {
-			let testPath = path.join( globalPath, this.phpcsExecutable );
-			if (fs.existsSync(testPath)) {
-				this.phpcsPath = testPath;
-				return true;
-			}
-			return false;
-		});
-
-		if (this.rootPath) {
+		let resolvedPath = null;
+		if (this.workspacePath) {
 			// Determine whether composer.json exists in our workspace root.
 			if (this.hasComposerJson()) {
 
@@ -156,10 +159,10 @@ export class PhpcsPathResolver {
 				if (this.hasComposerLock()) {
 
 					// Determine whether vendor/bin/phpcs exists only when project depends on phpcs.
-					if (this.hasComposerPhpcsDependency()) {
+					if (this.hasComposerDependency()) {
 						let vendorPath = this.getVendorPath();
 						if (fs.existsSync(vendorPath)) {
-							this.phpcsPath = vendorPath;
+							resolvedPath = vendorPath;
 						} else {
 							throw `Composer phpcs dependency is configured but was not found under ${vendorPath}. You may need to update your dependencies using "composer update".`;
 						}
@@ -170,7 +173,31 @@ export class PhpcsPathResolver {
 				}
 			}
 		}
-		return this.phpcsPath;
+		return resolvedPath;
+	}
+}
+
+export class PhpcsPathResolver extends BasePhpcsPathResolver {
+
+	private resolvers: Array<BasePhpcsPathResolver> = [];
+
+	constructor(workspacePath: string) {
+		super(workspacePath);
+		this.resolvers.push( new ComposerPhpcsPathResolver( workspacePath ) );
+		this.resolvers.push( new GlobalPhpcsPathResolver( workspacePath ) );
+	}
+
+	resolve(): string {
+		let resolvedPath: string = null;
+		this.resolvers.some((resolver) => {
+			let resolverPath = resolver.resolve();
+			if (resolvedPath !== resolverPath) {
+				resolvedPath = resolverPath;
+				return true;
+			}
+			return false;
+		});
+		return resolvedPath;
 	}
 }
 
@@ -246,36 +273,39 @@ export class PhpcsLinter {
 	}
 
 	/**
-	* Resolve the phpcs path.
-	*/
-	static resolvePath(rootPath: string): Thenable<any> {
-		return new Promise<any>((resolve, reject) => {
-			try {
-				let phpcsPathResolver = new PhpcsPathResolver(rootPath);
-				let executablePath = phpcsPathResolver.resolve();
-				let command = executablePath;
+	 * Create an instance of the PhpcsLinter.
+	 */
+	static async create(workspacePath: string, executablePath: string): Promise<PhpcsLinter> {
+		try {
 
-				// Make sure we escape spaces in paths on Windows.
-				if ( /^win/.test(process.platform) ) {
-					command = `"${command}"`;
-				}
-
-				cp.exec(`${command} --version`, function(error, stdout, _stderr) {
-
-					if (error) {
-						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer dependency manager to install it in your project locally.");
-					}
-
-					const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
-					const versionMatches = stdout.match(versionPattern);
-					const executableVersion = versionMatches[1];
-
-					resolve(new PhpcsLinter(executablePath, executableVersion));
-				});
-			} catch(e) {
-				reject(e);
+			if ( executablePath === null) {
+				let executablePathResolver = new PhpcsPathResolver(workspacePath);
+				executablePath = executablePathResolver.resolve();
 			}
-		});
+
+			let command = executablePath;
+
+			// Make sure we escape spaces in paths on Windows.
+			if ( /^win/.test(process.platform) ) {
+				command = `"${command}"`;
+			}
+
+			let result: Buffer = cp.execSync(`${command} --version`);
+
+			const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
+			const versionMatches = result.toString().match(versionPattern);
+
+			if (versionMatches === null) {
+				throw new Error('Invalid version string encountered!');
+			}
+
+			const executableVersion = versionMatches[1];
+			return new PhpcsLinter(executablePath, executableVersion);
+
+		} catch(error) {
+			let message = error.message ? error.message : 'Please add phpcs to your global path or use composer dependency manager to install it in your project locally.';
+			throw new Error(`Unable to locate phpcs. ${message}`);
+		}
 	}
 
 	public async lint(document: TextDocument, settings: PhpcsSettings, _rootPath?: string): Promise<Diagnostic[]> {

@@ -13,9 +13,9 @@ import {
 	IPCMessageReader, IPCMessageWriter,
 	createConnection, IConnection,
 	TextDocuments, TextDocument,
-	InitializeParams, InitializeResult, InitializeError,
+	InitializeParams, InitializeResult,
 	DidChangeConfigurationParams, DidChangeWatchedFilesParams,
-	PublishDiagnosticsParams, Files, ResponseError
+	PublishDiagnosticsParams, Files,
 } from 'vscode-languageserver';
 
 import * as proto from "./protocol";
@@ -28,7 +28,7 @@ class PhpcsServer {
 	private ready: boolean = false;
 	private documents: TextDocuments;
 	private linter: PhpcsLinter;
-	private rootPath: string;
+	private workspacePath: string;
 	private _validating: { [uri: string]: TextDocument };
 
 	/**
@@ -45,7 +45,9 @@ class PhpcsServer {
 			return this.onInitialize(params);
 		});
 		this.connection.onDidChangeConfiguration((params) => {
-			this.onDidChangeConfiguration(params);
+			this.onDidChangeConfiguration(params).catch((error: Error) => {
+				this.showErrorMessage(error.message);
+			});
 		});
 		this.connection.onDidChangeWatchedFiles((params) => {
 			this.onDidChangeWatchedFiles(params);
@@ -65,34 +67,42 @@ class PhpcsServer {
 	}
 
 	/**
+	 * Show an error message.
+	 *
+	 * @param message The message to show.
+	 */
+	private showErrorMessage(message: string): void {
+		this.connection.window.showErrorMessage(`phpcs: ${message}`);
+	}
+
+	/**
 	 * Handles server initialization.
 	 *
 	 * @param params The initialization parameters.
 	 * @return A promise of initialization result or initialization error.
 	 */
-	private onInitialize(params: InitializeParams) : Thenable<InitializeResult | ResponseError<InitializeError>> {
-		this.rootPath = params.rootPath;
-		return PhpcsLinter.resolvePath(this.rootPath).then((linter): InitializeResult | ResponseError<InitializeError> => {
-			this.linter = linter;
-			let result: InitializeResult = { capabilities: { textDocumentSync: this.documents.syncKind } };
-			return result;
-		}, (error) => {
-			return Promise.reject(
-				new ResponseError<InitializeError>(99,
-				error,
-				{ retry: true }));
-		});
+	private onInitialize(params: InitializeParams): InitializeResult {
+		this.workspacePath = params.rootPath;
+		let result: InitializeResult = { capabilities: { textDocumentSync: this.documents.syncKind } };
+		return result;
 	}
+
 	/**
 	 * Handles configuration changes.
 	 *
 	 * @param params The changed configuration parameters.
 	 * @return void
 	 */
-	private onDidChangeConfiguration(params: DidChangeConfigurationParams): void {
-		this.settings = params.settings.phpcs;
-		this.ready = true;
-		this.validateMany(this.documents.all());
+	private async onDidChangeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
+		try {
+			this.settings = params.settings.phpcs;
+			this.linter = await PhpcsLinter.create(this.workspacePath, this.settings.executablePath);
+			this.ready = true;
+			this.validateMany(this.documents.all());
+		} catch(error) {
+			this.ready = false;
+			throw error;
+		}
 	}
 
 	/**
@@ -101,7 +111,7 @@ class PhpcsServer {
 	 * @param params The changed watched files parameters.
 	 * @return void
 	 */
-	private onDidChangeWatchedFiles(_params: DidChangeWatchedFilesParams) : void {
+	private onDidChangeWatchedFiles(_params: DidChangeWatchedFilesParams): void {
 		this.validateMany(this.documents.all());
 	}
 
@@ -111,7 +121,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidOpenDocument(event: TextDocumentChangeEvent ) : void {
+	private onDidOpenDocument(event: TextDocumentChangeEvent ): void {
 		this.validateSingle(event.document);
 	}
 
@@ -121,7 +131,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidSaveDocument(event: TextDocumentChangeEvent ) : void {
+	private onDidSaveDocument(event: TextDocumentChangeEvent ): void {
 		this.validateSingle(event.document);
 	}
 
@@ -131,7 +141,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidCloseDocument(event: TextDocumentChangeEvent ) : void {
+	private onDidCloseDocument(event: TextDocumentChangeEvent ): void {
   		this.connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 	}
 
@@ -141,7 +151,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidChangeDocument(event: TextDocumentChangeEvent ) : void {
+	private onDidChangeDocument(event: TextDocumentChangeEvent ): void {
 		this.validateSingle(event.document);
 	}
 
@@ -199,9 +209,9 @@ class PhpcsServer {
 	 * @return void
 	 */
 	public validateSingle(document: TextDocument): void {
-		if (this._validating[ document.uri ] === undefined ) {
+		if (this.ready && this._validating[ document.uri ] === undefined ) {
 			this.sendStartValidationNotification(document);
-			this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
+			this.linter.lint(document, this.settings, this.workspacePath).then(diagnostics => {
 				this.sendEndValidationNotification(document);
 				this.sendDiagnostics({ uri: document.uri, diagnostics });
 			}, (error) => {

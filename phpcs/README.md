@@ -53,6 +53,12 @@ There are various options that can be configured by making changes to your user 
 [ Optional | **Default**: `true` ]
 This setting controls whether `phpcs` linting is enabled.
 
+### **phpcs.executablePath**
+
+[ Optional | **Default**: `null` ]
+This setting controls the executable path for the `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
+If omitted, the plugin will try to locate the path parsing your composer configuration or the global path.
+
 ### **phpcs.standard**
 
 [ Optional | **Default:** `null` ]
