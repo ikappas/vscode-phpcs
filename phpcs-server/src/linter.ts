@@ -276,37 +276,36 @@ export class PhpcsLinter {
 	 * Create an instance of the PhpcsLinter.
 	 */
 	static async create(workspacePath: string, executablePath: string): Promise<PhpcsLinter> {
-		return new Promise<PhpcsLinter>((resolve, reject) => {
-			try {
+		try {
 
-				if ( executablePath === null) {
-					let executablePathResolver = new PhpcsPathResolver(workspacePath);
-					executablePath = executablePathResolver.resolve();
-				}
-
-				let command = executablePath;
-
-				// Make sure we escape spaces in paths on Windows.
-				if ( /^win/.test(process.platform) ) {
-					command = `"${command}"`;
-				}
-
-				cp.exec(`${command} --version`, function(error, stdout, _stderr) {
-
-					if (error) {
-						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer dependency manager to install it in your project locally.");
-					}
-
-					const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
-					const versionMatches = stdout.match(versionPattern);
-					const executableVersion = versionMatches[1];
-
-					resolve(new PhpcsLinter(executablePath, executableVersion));
-				});
-			} catch(e) {
-				reject(e);
+			if ( executablePath === null) {
+				let executablePathResolver = new PhpcsPathResolver(workspacePath);
+				executablePath = executablePathResolver.resolve();
 			}
-		});
+
+			let command = executablePath;
+
+			// Make sure we escape spaces in paths on Windows.
+			if ( /^win/.test(process.platform) ) {
+				command = `"${command}"`;
+			}
+
+			let result: Buffer = cp.execSync(`${command} --version`);
+
+			const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
+			const versionMatches = result.toString().match(versionPattern);
+
+			if (versionMatches === null) {
+				throw new Error('Invalid version string encountered!');
+			}
+
+			const executableVersion = versionMatches[1];
+			return new PhpcsLinter(executablePath, executableVersion);
+
+		} catch(error) {
+			let message = error.message ? error.message : 'Please add phpcs to your global path or use composer dependency manager to install it in your project locally.';
+			throw new Error(`Unable to locate phpcs. ${message}`);
+		}
 	}
 
 	public async lint(document: TextDocument, settings: PhpcsSettings, _rootPath?: string): Promise<Diagnostic[]> {

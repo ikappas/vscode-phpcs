@@ -45,7 +45,9 @@ class PhpcsServer {
 			return this.onInitialize(params);
 		});
 		this.connection.onDidChangeConfiguration((params) => {
-			this.onDidChangeConfiguration(params);
+			this.onDidChangeConfiguration(params).catch((error: Error) => {
+				this.showErrorMessage(error.message);
+			});
 		});
 		this.connection.onDidChangeWatchedFiles((params) => {
 			this.onDidChangeWatchedFiles(params);
@@ -62,6 +64,15 @@ class PhpcsServer {
 		this.documents.onDidClose((event) => {
 			this.onDidCloseDocument(event);
 		});
+	}
+
+	/**
+	 * Show an error message.
+	 *
+	 * @param message The message to show.
+	 */
+	private showErrorMessage(message: string): void {
+		this.connection.window.showErrorMessage(`phpcs: ${message}`);
 	}
 
 	/**
@@ -82,17 +93,15 @@ class PhpcsServer {
 	 * @param params The changed configuration parameters.
 	 * @return void
 	 */
-	private onDidChangeConfiguration(params: DidChangeConfigurationParams): void {
-		this.settings = params.settings.phpcs;
+	private async onDidChangeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
 		try {
-			PhpcsLinter.create(this.workspacePath, this.settings.executablePath).then(linter => {
-				this.linter = linter;
-				this.ready = true;
-				this.validateMany(this.documents.all());
-			});
-		} catch(exception) {
+			this.settings = params.settings.phpcs;
+			this.linter = await PhpcsLinter.create(this.workspacePath, this.settings.executablePath);
+			this.ready = true;
+			this.validateMany(this.documents.all());
+		} catch(error) {
 			this.ready = false;
-			this.connection.window.showErrorMessage(exception.message);
+			throw error;
 		}
 	}
 
