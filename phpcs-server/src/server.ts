@@ -216,27 +216,6 @@ class PhpcsServer {
 		documents.forEach((document: TextDocument) =>{
 			this.validateSingle(document);
 		});
-		// let tracker = new ErrorMessageTracker();
-		// let promises: Thenable<PublishDiagnosticsParams>[] = [];
-
-		// documents.forEach((document: TextDocument) => {
-		// 	this.sendStartValidationNotification(document);
-		// 	promises.push( this.linter.lint(document, this.settings, this.rootPath).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]): PublishDiagnosticsParams => {
-		// 		this.connection.console.log(`processing: ${document.uri}`);
-		// 		this.sendEndValidationNotification(document);
-		// 		let diagnostic = { uri: document.uri, diagnostics };
-		// 		this.sendDiagnostics(diagnostic);
-		// 		return diagnostic;
-		// 	}, (error: any): PublishDiagnosticsParams => {
-		// 		this.sendEndValidationNotification(document);
-		// 		tracker.add(this.getExceptionMessage(error, document));
-		// 		return { uri: document.uri, diagnostics: [] };
-		// 	}));
-		// });
-
-		// Promise.all( promises ).then( results => {
-		// 	tracker.sendErrors(this.connection);
-		// });
 	}
 
 	/**
