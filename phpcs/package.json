@@ -59,21 +59,23 @@
         },
         "phpcs.errorSeverity": {
           "scope": "resource",
-          "type": [
-            "number",
-            "null"
-          ],
-          "default": null,
-          "description": "Optional. Control the error severity level."
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "The minimum severity an error must have to be displayed."
         },
         "phpcs.warningSeverity": {
           "scope": "resource",
-          "type": [
-            "number",
-            "null"
-          ],
-          "default": null,
-          "description": "Optional. Control the warning severity level."
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "The minimum severity a warning must have to be displayed."
+        },
+        "phpcs.showWarnings": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Control whether warnings are displayed."
         },
         "phpcs.showSources": {
           "scope": "resource",
