@@ -46,6 +46,7 @@ export class PhpcsPathResolver {
 		let extension = /^win/.test(process.platform) ? ".bat" : "";
 		this.phpcsExecutable = `phpcs${extension}`;
 	}
+
 	/**
 	 * Determine whether composer.json exists at the root path.
 	 */
@@ -56,6 +57,7 @@ export class PhpcsPathResolver {
 			return false;
 		}
 	}
+
 	/**
 	 * Determine whether composer.lock exists at the root path.
 	 */
@@ -66,6 +68,7 @@ export class PhpcsPathResolver {
 			return false;
 		}
 	}
+
 	/**
 	 * Determine whether phpcs is set as a composer dependency.
 	 */
@@ -101,6 +104,7 @@ export class PhpcsPathResolver {
 		}
 		return result;
 	}
+
 	/**
 	 * Get the composer vendor path.
 	 */
@@ -128,6 +132,7 @@ export class PhpcsPathResolver {
 
 		return vendorPath;
 	}
+
 	resolve(): string {
 		this.phpcsPath = this.phpcsExecutable;
 

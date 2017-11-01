@@ -153,6 +153,7 @@ class PhpcsServer {
 	public listen(): void {
 		this.connection.listen();
 	}
+
 	/**
 	 * Sends diagnostics computed for a given document to VSCode to render them in the
 	 * user interface.
@@ -162,6 +163,7 @@ class PhpcsServer {
 	private sendDiagnostics(params: PublishDiagnosticsParams): void {
 		this.connection.sendDiagnostics(params);
 	}
+
 	/**
 	 * Sends a notification for starting validation of a document.
 	 *
@@ -175,6 +177,7 @@ class PhpcsServer {
 		);
 		this.connection.tracer.log(`Linting started on: ${document.uri}`);
 	}
+
 	/**
 	 * Sends a notification for ending validation of a document.
 	 *
@@ -188,6 +191,7 @@ class PhpcsServer {
 		);
 		this.connection.tracer.log(`Linting completed on: ${document.uri}`);
 	}
+
 	/**
 	 * Validate a single text document.
 	 *
@@ -206,6 +210,7 @@ class PhpcsServer {
 			});
 		}
 	}
+
 	/**
 	 * Validate a list of text documents.
 	 *
