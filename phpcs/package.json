@@ -44,6 +44,11 @@
           "default": null,
           "description": "Optional. The path to the phpcs executable."
         },
+        "phpcs.composerJsonPath": {
+          "type": "string",
+          "default": "composer.json",
+          "description": "The path to composer.json"
+        },
         "phpcs.standard": {
           "scope": "resource",
           "type": [
