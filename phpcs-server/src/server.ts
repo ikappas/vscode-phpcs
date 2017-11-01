@@ -173,6 +173,7 @@ class PhpcsServer {
 			proto.DidStartValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
 		);
+		this.connection.tracer.log(`Linting started on: ${document.uri}`);
 	}
 	/**
 	 * Sends a notification for ending validation of a document.
@@ -185,6 +186,7 @@ class PhpcsServer {
 			proto.DidEndValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
 		);
+		this.connection.tracer.log(`Linting completed on: ${document.uri}`);
 	}
 	/**
 	 * Validate a single text document.
