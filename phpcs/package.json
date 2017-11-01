@@ -34,11 +34,13 @@
       "title": "PHP CodeSniffer configuration",
       "properties": {
         "phpcs.enable": {
+          "scope": "resource",
           "type": "boolean",
           "default": true,
           "description": "Control whether phpcs is enabled for PHP files or not."
         },
         "phpcs.standard": {
+          "scope": "resource",
           "type": [
             "string",
             "null"
@@ -47,6 +49,7 @@
           "description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
         },
         "phpcs.ignorePatterns": {
+          "scope": "resource",
           "type": [
             "array",
             "null"
@@ -55,6 +58,7 @@
           "description": "Optional. An array of glob patterns to ignore files and directories."
         },
         "phpcs.errorSeverity": {
+          "scope": "resource",
           "type": [
             "number",
             "null"
@@ -63,6 +67,7 @@
           "description": "Optional. Control the error severity level."
         },
         "phpcs.warningSeverity": {
+          "scope": "resource",
           "type": [
             "number",
             "null"
@@ -71,6 +76,7 @@
           "description": "Optional. Control the warning severity level."
         },
         "phpcs.showSource": {
+          "scope": "resource",
           "type": "boolean",
           "default": false,
           "description": "Optional. Control whether sniff sources are displayed."
