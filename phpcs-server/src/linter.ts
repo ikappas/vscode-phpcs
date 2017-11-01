@@ -30,7 +30,7 @@ interface PhpcsMessage {
 export interface PhpcsSettings {
 	enable: boolean;
 	standard: string;
-	showSource: boolean;
+	showSources: boolean;
 	ignorePatterns?: string[];
 	warningSeverity?: number;
 	errorSeverity?: number;
@@ -174,7 +174,7 @@ export class PhpcsPathResolver {
 }
 
 interface DiagnosticOptions {
-	showSource: boolean;
+	showSources: boolean;
 }
 
 function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, options: DiagnosticOptions ): Diagnostic {
@@ -225,9 +225,9 @@ function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, options: Di
 		severity = DiagnosticSeverity.Warning;
 	}
 
-	// Process diagnostic source.
+	// Process diagnostic sources.
 	let message: string = entry.message;
-	if (options.showSource) {
+	if (options.showSources) {
 		message += `\n(${ entry.source })`;
 	}
 
@@ -305,7 +305,8 @@ export class PhpcsLinter {
 				lintArgs.push('-q');
 			}
 
-			if (settings.showSource === true) {
+			// Show sniff source codes in report output.
+			if (settings.showSources === true) {
 				lintArgs.push('-s');
 			}
 
@@ -424,9 +425,7 @@ export class PhpcsLinter {
 					}
 
 					messages.map((message) => {
-						diagnostics.push(makeDiagnostic(document, message, {
-							showSource: settings.showSource
-						}));
+						diagnostics.push(makeDiagnostic(document, message, settings));
 					});
 
 					resolve(diagnostics);
