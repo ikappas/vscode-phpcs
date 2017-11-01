@@ -21,7 +21,7 @@ export interface DidStartValidateTextDocumentParams {
  * the start of the validation on text documents.
  */
 export namespace DidStartValidateTextDocumentNotification {
-    export const type = new NotificationType<DidStartValidateTextDocumentParams, void>( "textDocument/didStartValidate" );
+	export const type = new NotificationType<DidStartValidateTextDocumentParams, void>( "textDocument/didStartValidate" );
 }
 
 /**
@@ -39,5 +39,5 @@ export interface DidEndValidateTextDocumentParams {
  * the end of the validation on text documents.
  */
 export namespace DidEndValidateTextDocumentNotification {
-    export const type = new NotificationType<DidEndValidateTextDocumentParams, void>( "textDocument/didEndValidate" );
+	export const type = new NotificationType<DidEndValidateTextDocumentParams, void>( "textDocument/didEndValidate" );
 }

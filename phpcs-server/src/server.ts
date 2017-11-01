@@ -23,11 +23,11 @@ import { PhpcsLinter, PhpcsSettings } from "./linter";
 
 class PhpcsServer {
 
-    private connection: IConnection;
-    private settings: PhpcsSettings;
-    private ready: boolean = false;
-    private documents: TextDocuments;
-    private linter: PhpcsLinter;
+	private connection: IConnection;
+	private settings: PhpcsSettings;
+	private ready: boolean = false;
+	private documents: TextDocuments;
+	private linter: PhpcsLinter;
 	private rootPath: string;
 	private _validating: { [uri: string]: TextDocument };
 
@@ -36,33 +36,33 @@ class PhpcsServer {
 	 *
 	 * @return A new instance of the server.
 	 */
-    constructor() {
+	constructor() {
 		this._validating = Object.create(null);
-        this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-        this.documents = new TextDocuments();
-        this.documents.listen(this.connection);
-        this.connection.onInitialize((params): any => {
-            return this.onInitialize(params);
-        });
-        this.connection.onDidChangeConfiguration((params) => {
-            this.onDidChangeConfiguration(params);
-        });
-        this.connection.onDidChangeWatchedFiles((params) => {
-            this.onDidChangeWatchedFiles(params);
-        });
+		this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+		this.documents = new TextDocuments();
+		this.documents.listen(this.connection);
+		this.connection.onInitialize((params): any => {
+			return this.onInitialize(params);
+		});
+		this.connection.onDidChangeConfiguration((params) => {
+			this.onDidChangeConfiguration(params);
+		});
+		this.connection.onDidChangeWatchedFiles((params) => {
+			this.onDidChangeWatchedFiles(params);
+		});
 		this.documents.onDidChangeContent((event) =>{
 			this.onDidChangeDocument(event);
 		});
-        this.documents.onDidOpen((event) => {
-            this.onDidOpenDocument(event);
-        });
-        this.documents.onDidSave((event) => {
-            this.onDidSaveDocument(event);
-        });
+		this.documents.onDidOpen((event) => {
+			this.onDidOpenDocument(event);
+		});
+		this.documents.onDidSave((event) => {
+			this.onDidSaveDocument(event);
+		});
 		this.documents.onDidClose((event) => {
-            this.onDidCloseDocument(event);
-        });
-    }
+			this.onDidCloseDocument(event);
+		});
+	}
 
 	/**
 	 * Handles server initialization.
@@ -70,7 +70,7 @@ class PhpcsServer {
 	 * @param params The initialization parameters.
 	 * @return A promise of initialization result or initialization error.
 	 */
-    private onInitialize(params: InitializeParams) : Thenable<InitializeResult | ResponseError<InitializeError>> {
+	private onInitialize(params: InitializeParams) : Thenable<InitializeResult | ResponseError<InitializeError>> {
 		this.rootPath = params.rootPath;
 		return PhpcsLinter.resolvePath(this.rootPath).then((linter): InitializeResult | ResponseError<InitializeError> => {
 			this.linter = linter;
@@ -82,18 +82,18 @@ class PhpcsServer {
 				error,
 				{ retry: true }));
 		});
-    }
+	}
 	/**
 	 * Handles configuration changes.
 	 *
 	 * @param params The changed configuration parameters.
 	 * @return void
 	 */
-    private onDidChangeConfiguration(params: DidChangeConfigurationParams): void {
-        this.settings = params.settings.phpcs;
-        this.ready = true;
-        this.validateMany(this.documents.all());
-    }
+	private onDidChangeConfiguration(params: DidChangeConfigurationParams): void {
+		this.settings = params.settings.phpcs;
+		this.ready = true;
+		this.validateMany(this.documents.all());
+	}
 
 	/**
 	 * Handles watched files changes.
@@ -150,16 +150,16 @@ class PhpcsServer {
 	 *
 	 * @return void
 	 */
-    public listen(): void {
-        this.connection.listen();
-    }
+	public listen(): void {
+		this.connection.listen();
+	}
 	/**
-     * Sends diagnostics computed for a given document to VSCode to render them in the
-     * user interface.
-     *
-     * @param params The diagnostic parameters.
-     */
-    private sendDiagnostics(params: PublishDiagnosticsParams): void {
+	 * Sends diagnostics computed for a given document to VSCode to render them in the
+	 * user interface.
+	 *
+	 * @param params The diagnostic parameters.
+	 */
+	private sendDiagnostics(params: PublishDiagnosticsParams): void {
 		this.connection.sendDiagnostics(params);
 	}
 	/**
@@ -194,7 +194,7 @@ class PhpcsServer {
 	 * @param document The text document to validate.
 	 * @return void
 	 */
-    public validateSingle(document: TextDocument): void {
+	public validateSingle(document: TextDocument): void {
 		if (this._validating[ document.uri ] === undefined ) {
 			this.sendStartValidationNotification(document);
 			this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
@@ -205,14 +205,14 @@ class PhpcsServer {
 				this.connection.window.showErrorMessage(this.getExceptionMessage(error, document));
 			});
 		}
-    }
+	}
 	/**
 	 * Validate a list of text documents.
 	 *
 	 * @param documents The list of text documents to validate.
 	 * @return void
 	 */
-    public validateMany(documents: TextDocument[]): void {
+	public validateMany(documents: TextDocument[]): void {
 		documents.forEach((document: TextDocument) =>{
 			this.validateSingle(document);
 		});
@@ -237,7 +237,7 @@ class PhpcsServer {
 		// Promise.all( promises ).then( results => {
 		// 	tracker.sendErrors(this.connection);
 		// });
-    }
+	}
 
 	/**
 	 * Get the exception message from an exception object.
@@ -246,19 +246,19 @@ class PhpcsServer {
 	 * @param document The document where the exception occurred.
 	 * @return string The exception message.
 	 */
-    private getExceptionMessage(exception: any, document: TextDocument): string {
-        let msg: string = null;
-        if (typeof exception.message === "string" || exception.message instanceof String) {
-            msg = <string>exception.message;
-            msg = msg.replace(/\r?\n/g, " ");
-            if (/^ERROR: /.test(msg)) {
-                msg = msg.substr(5);
-            }
-        } else {
-            msg = `An unknown error occurred while validating file: ${Files.uriToFilePath(document.uri) }`;
-        }
-        return `phpcs: ${msg}`;
-    }
+	private getExceptionMessage(exception: any, document: TextDocument): string {
+		let msg: string = null;
+		if (typeof exception.message === "string" || exception.message instanceof String) {
+			msg = <string>exception.message;
+			msg = msg.replace(/\r?\n/g, " ");
+			if (/^ERROR: /.test(msg)) {
+				msg = msg.substr(5);
+			}
+		} else {
+			msg = `An unknown error occurred while validating file: ${Files.uriToFilePath(document.uri) }`;
+		}
+		return `phpcs: ${msg}`;
+	}
 }
 
 let server = new PhpcsServer();

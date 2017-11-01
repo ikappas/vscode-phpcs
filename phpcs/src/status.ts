@@ -11,14 +11,14 @@ class Timer {
 	/**
 	 * Frequency of elapse event of the timer in millisecond
 	 */
-    public interval = 1000;
+	public interval = 1000;
 
 	/**
 	 * The function to execute on tick.
 	 *
 	 * @var Function
 	 */
-    private tick: Function;
+	private tick: Function;
 
 	/**
 	 * A boolean flag indicating whether the timer is enabled.
@@ -27,8 +27,8 @@ class Timer {
 	 */
 	private enable: boolean = false;
 
-    // Member variable: Hold interval id of the timer
-    private handle : NodeJS.Timer;
+	// Member variable: Hold interval id of the timer
+	private handle : NodeJS.Timer;
 
 	/**
 	 * Class constructor.
@@ -42,31 +42,31 @@ class Timer {
 	/**
 	 * Start the timer.
 	 */
-    public start(): void {
-       	this.enable = true;
-        if (this.enable) {
-            this.handle = setInterval(() => {
-                this.tick();
-            }, this.interval);
-        }
-    };
+	public start(): void {
+	   	this.enable = true;
+		if (this.enable) {
+			this.handle = setInterval(() => {
+				this.tick();
+			}, this.interval);
+		}
+	};
 
-    /**
+	/**
 	 * Stop the timer.
 	 */
 	 public stop(): void {
-        this.enable = false;
+		this.enable = false;
 		if (this.handle) {
-        	clearInterval(this.handle);
+			clearInterval(this.handle);
 		}
-    };
+	};
 
 	/**
 	 * Dispose the timer.
 	 */
 	public dispose(): void {
 		if (this.handle) {
-        	clearInterval(this.handle);
+			clearInterval(this.handle);
 		}
 	}
 };
@@ -135,9 +135,9 @@ export class PhpcsStatus {
 
 	private getStatusBarItem(): StatusBarItem {
 		// Create as needed
-        if (!this.statusBarItem) {
-            this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
-        }
+		if (!this.statusBarItem) {
+			this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
+		}
 		return this.statusBarItem;
 	}
 	private getOutputChannel(): OutputChannel {
@@ -149,10 +149,10 @@ export class PhpcsStatus {
 
 	dispose() {
 		if (this.statusBarItem) {
-        	this.statusBarItem.dispose();
+			this.statusBarItem.dispose();
 		}
 		if (this.timer) {
 			this.timer.dispose();
 		}
-    }
+	}
 }
