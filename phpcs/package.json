@@ -80,6 +80,17 @@
           "type": "boolean",
           "default": false,
           "description": "Optional. Control whether sniff sources are displayed."
+        },
+        "phpcs.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VSCode and the language server."
         }
       }
     }
