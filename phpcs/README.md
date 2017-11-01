@@ -150,6 +150,11 @@ This setting controls the warning severity level used by `phpcs`. You may specif
 [ Optional | **Default**: `false` ]
 This setting controls whether sniff sources are displayed.
 
+### **phpcs.trace.server**
+
+[ Optional | **Default**: `off` ]
+This setting controls whether the trace server is activated. Possible values you can use is `off`, `messages` or `verbose`.
+
 ## Acknowledgements
 
 The extension architecture is based off of the [Language Server Node Example](https://github.com/Microsoft/vscode-languageserver-node-example).

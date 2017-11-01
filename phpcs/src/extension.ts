@@ -39,7 +39,7 @@ export function activate(context: ExtensionContext) {
 	};
 
 	// Create the language client the client.
-	let client = new LanguageClient("PHP CodeSniffer Linter", serverOptions, clientOptions);
+	let client = new LanguageClient("phpcs", "PHP Code Sniffer", serverOptions, clientOptions);
 
 	let status = new PhpcsStatus();
 	client.onReady().then(() => {
