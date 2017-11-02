@@ -308,14 +308,7 @@ export class PhpcsLinter {
 	static async create(executablePath: string): Promise<PhpcsLinter> {
 		try {
 
-			let command = executablePath;
-
-			// Make sure we escape spaces in paths on Windows.
-			if ( /^win/.test(process.platform) ) {
-				command = `"${command}"`;
-			}
-
-			let result: Buffer = cp.execSync(`${command} --version`);
+			let result: Buffer = cp.execSync(`"${executablePath}" --version`);
 
 			const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
 			const versionMatches = result.toString().match(versionPattern);
