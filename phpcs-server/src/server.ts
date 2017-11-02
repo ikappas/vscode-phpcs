@@ -49,19 +49,29 @@ class PhpcsServer {
 			});
 		});
 		this.connection.onDidChangeWatchedFiles((params) => {
-			this.onDidChangeWatchedFiles(params);
+			this.onDidChangeWatchedFiles(params).catch((error: Error) => {
+				this.showErrorMessage(error.message);
+			});
 		});
 		this.documents.onDidChangeContent((event) =>{
-			this.onDidChangeDocument(event);
+			this.onDidChangeDocument(event).catch((error: Error) => {
+				this.showErrorMessage(error.message);
+			});
 		});
 		this.documents.onDidOpen((event) => {
-			this.onDidOpenDocument(event);
+			this.onDidOpenDocument(event).catch((error: Error) => {
+				this.showErrorMessage(error.message);
+			});
 		});
 		this.documents.onDidSave((event) => {
-			this.onDidSaveDocument(event);
+			this.onDidSaveDocument(event).catch((error: Error) => {
+				this.showErrorMessage(error.message);
+			});
 		});
 		this.documents.onDidClose((event) => {
-			this.onDidCloseDocument(event);
+			this.onDidCloseDocument(event).catch((error: Error) => {
+				this.showErrorMessage(error.message);
+			});
 		});
 	}
 
@@ -93,22 +103,8 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidChangeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
-		try {
-			this.settings = params.settings.phpcs;
-
-			let executablePath = this.settings.executablePath;
-			if (executablePath === null) {
-				let executablePathResolver = new PhpcsPathResolver(this.workspacePath, this.settings);
-				executablePath = await executablePathResolver.resolve();
-			}
-
-			this.linter = await PhpcsLinter.create(executablePath);
-			this.ready = true;
-			this.validateMany(this.documents.all());
-		} catch(error) {
-			this.ready = false;
-			throw error;
-		}
+		this.settings = params.settings.phpcs;
+		await this.initializeLinter();
 	}
 
 	/**
@@ -117,8 +113,8 @@ class PhpcsServer {
 	 * @param params The changed watched files parameters.
 	 * @return void
 	 */
-	private onDidChangeWatchedFiles(_params: DidChangeWatchedFilesParams): void {
-		this.validateMany(this.documents.all());
+	private async onDidChangeWatchedFiles(_params: DidChangeWatchedFilesParams): Promise<void> {
+		await this.validateMany(this.documents.all());
 	}
 
 	/**
@@ -127,8 +123,8 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidOpenDocument(event: TextDocumentChangeEvent ): void {
-		this.validateSingle(event.document);
+	private async onDidOpenDocument(event: TextDocumentChangeEvent ): Promise<void> {
+		await this.validateSingle(event.document);
 	}
 
 	/**
@@ -137,8 +133,8 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidSaveDocument(event: TextDocumentChangeEvent ): void {
-		this.validateSingle(event.document);
+	private async onDidSaveDocument(event: TextDocumentChangeEvent ): Promise<void> {
+		await this.validateSingle(event.document);
 	}
 
 	/**
@@ -147,7 +143,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidCloseDocument(event: TextDocumentChangeEvent ): void {
+	private async onDidCloseDocument(event: TextDocumentChangeEvent ): Promise<void> {
   		this.connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 	}
 
@@ -157,8 +153,37 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidChangeDocument(event: TextDocumentChangeEvent ): void {
-		this.validateSingle(event.document);
+	private async onDidChangeDocument(event: TextDocumentChangeEvent ): Promise<void> {
+		await this.validateSingle(event.document);
+	}
+
+	/**
+	 * Initialize linter instance.
+	 */
+	private async initializeLinter() {
+		try {
+			let executablePath = this.settings.executablePath;
+			if (executablePath === null) {
+				let executablePathResolver = new PhpcsPathResolver(this.workspacePath, this.settings);
+				executablePath = await executablePathResolver.resolve();
+			}
+
+			this.linter = await PhpcsLinter.create(executablePath);
+			this.ready = true;
+			this.validateMany(this.documents.all());
+		} catch (error) {
+			this.ready = false;
+			throw error;
+		}
+	}
+
+	/**
+	 * Initialize linter unless it is ready.
+	 */
+	private async initializeLinterUnlessReady() {
+		if (this.ready === false) {
+			await this.initializeLinter();
+		}
 	}
 
 	/**
@@ -214,16 +239,17 @@ class PhpcsServer {
 	 * @param document The text document to validate.
 	 * @return void
 	 */
-	public validateSingle(document: TextDocument): void {
+	public async validateSingle(document: TextDocument): Promise<void> {
+		await this.initializeLinterUnlessReady();
 		if (this.ready === true && this.validating.has(document.uri) === false) {
 			this.sendStartValidationNotification(document);
-			this.linter.lint(document, this.settings).then(diagnostics => {
+			let diagnostics = await this.linter.lint(document, this.settings).catch((error) => {
 				this.sendEndValidationNotification(document);
-				this.sendDiagnostics({ uri: document.uri, diagnostics });
-			}, (error) => {
-				this.sendEndValidationNotification(document);
-				this.connection.window.showErrorMessage(this.getExceptionMessage(error, document));
+				throw new Error(this.getExceptionMessage(error, document));
 			});
+
+			this.sendEndValidationNotification(document);
+			this.sendDiagnostics({ uri: document.uri, diagnostics });
 		}
 	}
 
@@ -233,10 +259,10 @@ class PhpcsServer {
 	 * @param documents The list of text documents to validate.
 	 * @return void
 	 */
-	public validateMany(documents: TextDocument[]): void {
-		documents.forEach((document: TextDocument) =>{
-			this.validateSingle(document);
-		});
+	public async validateMany(documents: TextDocument[]): Promise<void> {
+		for (var i = 0, len = documents.length; i < len; i++) {
+			await this.validateSingle(documents[i]);
+		}
 	}
 
 	/**
@@ -247,17 +273,17 @@ class PhpcsServer {
 	 * @return string The exception message.
 	 */
 	private getExceptionMessage(exception: any, document: TextDocument): string {
-		let msg: string = null;
-		if (typeof exception.message === "string" || exception.message instanceof String) {
-			msg = <string>exception.message;
-			msg = msg.replace(/\r?\n/g, " ");
-			if (/^ERROR: /.test(msg)) {
-				msg = msg.substr(5);
+		let message: string = null;
+		if (typeof exception.message === 'string' || exception.message instanceof String) {
+			message = <string>exception.message;
+			message = message.replace(/\r?\n/g, ' ');
+			if (/^ERROR: /.test(message)) {
+				message = message.substr(5);
 			}
 		} else {
-			msg = `An unknown error occurred while validating file: ${Files.uriToFilePath(document.uri) }`;
+			message = `An unknown error occurred while validating file: ${Files.uriToFilePath(document.uri) }`;
 		}
-		return `phpcs: ${msg}`;
+		return message;
 	}
 }
 
