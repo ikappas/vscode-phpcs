@@ -231,11 +231,7 @@ export class PhpcsPathResolver extends BasePhpcsPathResolver {
 	}
 }
 
-interface DiagnosticOptions {
-	showSources: boolean;
-}
-
-function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, options: DiagnosticOptions ): Diagnostic {
+function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources: boolean): Diagnostic {
 
 	let lines = document.getText().split("\n");
 	let line = entry.line - 1;
@@ -285,7 +281,7 @@ function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, options: Di
 
 	// Process diagnostic sources.
 	let message: string = entry.message;
-	if (options.showSources) {
+	if (showSources) {
 		message += `\n(${ entry.source })`;
 	}
 
@@ -482,7 +478,7 @@ export class PhpcsLinter {
 					}
 
 					messages.map((message) => {
-						diagnostics.push(makeDiagnostic(document, message, settings));
+						diagnostics.push(makeDiagnostic(document, message, settings.showSources));
 					});
 
 					resolve(diagnostics);
