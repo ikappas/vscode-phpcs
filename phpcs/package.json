@@ -9,6 +9,7 @@
     "color": "#6082bb",
     "theme": "dark"
   },
+  "icon": "phpcs_icon.png",
   "homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
   "repository": {
     "type": "git",
