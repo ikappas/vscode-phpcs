@@ -8,7 +8,7 @@ Visual Studio Code must be installed in order to use this plugin. If Visual Stud
 
 ## Linter Installation
 
-Before using this plugin, you must ensure that `phpcs` is installed on your system. The installation can be performed system-wide using [pear](http://pear.php.net/) or project-wide using [composer](https://getcomposer.org/).
+Before using this plugin, you must ensure that `phpcs` is installed on your system. The installation can be performed system-wide using [pear](http://pear.php.net/) or system-wide / project-wide using [composer](https://getcomposer.org/).
 
 Once phpcs is installed, you can proceed to install the vscode-phpcs plugin if it is not yet installed.
 
@@ -16,22 +16,31 @@ Once phpcs is installed, you can proceed to install the vscode-phpcs plugin if i
 
 ### System-wide Installation
 
+#### Using PEAR
+
 The `phpcs` linter can be installed in your system using the PHP Extension and Application Repository (PEAR).
 
-1. Install [php](http://php.net).
-2. Install [pear](http://pear.php.net).
-3. Install `phpcs` by typing the following in a terminal:
+1. Install [pear](http://pear.php.net).
+2. Install `phpcs` by typing the following in a terminal:
     ```bash
     pear install PHP_CodeSniffer
+    ```
+#### Using Composer
+
+The `phpcs` linter can be installed globally using the Composer Dependency Manager for PHP.
+
+1. Install [composer](https://getcomposer.org/doc/00-intro.md).
+2. Require `phpcs` package by typing the following in a terminal:
+    ```bash
+    composer global require squizlabs/php_codesniffer
     ```
 
 ### Project-wide Installation
 
 The `phpcs` linter can be installed in your project using the Composer Dependency Manager for PHP.
 
-1. Install [php](http://php.net).
-2. Install [composer](https://getcomposer.org/doc/00-intro.md).
-3. Require `phpcs` package by typing the following at the root of your project in a terminal:
+1. Install [composer](https://getcomposer.org/doc/00-intro.md).
+2. Require `phpcs` package by typing the following at the root of your project in a terminal:
     ```bash
     composer require --dev squizlabs/php_codesniffer
     ```
