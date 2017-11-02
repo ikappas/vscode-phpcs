@@ -28,7 +28,7 @@ class PhpcsServer {
 	private documents: TextDocuments;
 	private linter: PhpcsLinter;
 	private workspacePath: string;
-	private _validating: { [uri: string]: TextDocument };
+	private validating: Map<string, TextDocument>;
 
 	/**
 	 * Class constructor.
@@ -36,7 +36,7 @@ class PhpcsServer {
 	 * @return A new instance of the server.
 	 */
 	constructor() {
-		this._validating = Object.create(null);
+		this.validating = new Map();
 		this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 		this.documents = new TextDocuments();
 		this.documents.listen(this.connection);
@@ -186,7 +186,7 @@ class PhpcsServer {
 	 * @param document The text document on which validation started.
 	 */
 	private sendStartValidationNotification(document: TextDocument): void {
-		this._validating[ document.uri ] = document;
+		this.validating.set(document.uri, document);
 		this.connection.sendNotification(
 			proto.DidStartValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
@@ -200,7 +200,7 @@ class PhpcsServer {
 	 * @param document The text document on which validation ended.
 	 */
 	private sendEndValidationNotification(document: TextDocument): void {
-		delete this._validating[ document.uri ];
+		this.validating.delete(document.uri);
 		this.connection.sendNotification(
 			proto.DidEndValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
@@ -215,7 +215,7 @@ class PhpcsServer {
 	 * @return void
 	 */
 	public validateSingle(document: TextDocument): void {
-		if (this.ready && this._validating[ document.uri ] === undefined ) {
+		if (this.ready === true && this.validating.has(document.uri) === false) {
 			this.sendStartValidationNotification(document);
 			this.linter.lint(document, this.settings).then(diagnostics => {
 				this.sendEndValidationNotification(document);
