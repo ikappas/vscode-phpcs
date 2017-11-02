@@ -2,8 +2,7 @@
  * Copyright (c) Ioannis Kappas. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-/// <reference path="typings/thenable.d.ts" />
-'use strict';
+"use strict";
 
 import {
 	TextDocumentIdentifier, TextDocumentChangeEvent
