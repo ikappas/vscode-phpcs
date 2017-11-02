@@ -108,12 +108,12 @@ declare module "cross-spawn" {
 		signal: string;
 		error: Error;
 	}
-	export function spawnSync(command: string): SpawnSyncReturns<Buffer>;
-	export function spawnSync(command: string, options?: SpawnSyncOptionsWithStringEncoding): SpawnSyncReturns<string>;
-	export function spawnSync(command: string, options?: SpawnSyncOptionsWithBufferEncoding): SpawnSyncReturns<Buffer>;
-	export function spawnSync(command: string, options?: SpawnSyncOptions): SpawnSyncReturns<Buffer>;
-	export function spawnSync(command: string, args?: string[], options?: SpawnSyncOptionsWithStringEncoding): SpawnSyncReturns<string>;
-	export function spawnSync(command: string, args?: string[], options?: SpawnSyncOptionsWithBufferEncoding): SpawnSyncReturns<Buffer>;
-	export function spawnSync(command: string, args?: string[], options?: SpawnSyncOptions): SpawnSyncReturns<Buffer>;
+	export function sync(command: string): SpawnSyncReturns<Buffer>;
+	export function sync(command: string, options?: SpawnSyncOptionsWithStringEncoding): SpawnSyncReturns<string>;
+	export function sync(command: string, options?: SpawnSyncOptionsWithBufferEncoding): SpawnSyncReturns<Buffer>;
+	export function sync(command: string, options?: SpawnSyncOptions): SpawnSyncReturns<Buffer>;
+	export function sync(command: string, args?: string[], options?: SpawnSyncOptionsWithStringEncoding): SpawnSyncReturns<string>;
+	export function sync(command: string, args?: string[], options?: SpawnSyncOptionsWithBufferEncoding): SpawnSyncReturns<Buffer>;
+	export function sync(command: string, args?: string[], options?: SpawnSyncOptions): SpawnSyncReturns<Buffer>;
 
 }
