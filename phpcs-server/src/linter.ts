@@ -71,6 +71,7 @@ class GlobalPhpcsPathResolver extends BasePhpcsPathResolver {
 
 class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 
+	protected readonly enabled: boolean;
 	protected readonly composerJsonPath: string;
 	protected readonly composerLockPath: string;
 
@@ -83,13 +84,17 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 	constructor(workspacePath: string, composerJsonPath?: string) {
 		super(workspacePath);
 
-		if (composerJsonPath !== undefined) {
-			this.composerJsonPath = fs.realpathSync(composerJsonPath);
-		} else {
-			this.composerJsonPath = path.join(workspacePath, 'composer.json');
+		if (!path.isAbsolute(composerJsonPath)) {
+			composerJsonPath = path.join(workspacePath, composerJsonPath);
 		}
 
-		this.composerLockPath = path.join(path.dirname(this.composerJsonPath), 'composer.lock');
+		try {
+			this.composerJsonPath = fs.realpathSync(composerJsonPath);
+			this.composerLockPath = path.join(path.dirname(this.composerJsonPath), 'composer.lock');
+			this.enabled = true;
+		} catch(error) {
+			this.enabled = false;
+		}
 	}
 
 	/**
@@ -174,7 +179,7 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 
 	async resolve(): Promise<string> {
 		let resolvedPath = null;
-		if (this.workspacePath) {
+		if (this.enabled && this.workspacePath) {
 			// Determine whether composer.json exists in our workspace root.
 			if (this.hasComposerJson()) {
 
