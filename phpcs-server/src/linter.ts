@@ -34,7 +34,7 @@ export interface PhpcsSettings {
 	standard: string;
 	showSources: boolean;
 	showWarnings: boolean;
-	ignorePatterns?: string[];
+	ignorePatterns: string[];
 	warningSeverity: number;
 	errorSeverity: number;
 }
@@ -376,15 +376,13 @@ export class PhpcsLinter {
 			}
 
 			// Check if file should be ignored (Skip for in-memory documents)
-			if ( filePath !== undefined ) {
-				if (settings.ignorePatterns !== null && settings.ignorePatterns.length) {
-					if (semver.gte(this.executableVersion, '3.0.0')) {
-						// PHPCS v3 and up support this with STDIN files
-						lintArgs.push(`--ignore=${settings.ignorePatterns.join(',')}`);
-					} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
-						// We must determine this ourself for lower versions
-						return resolve([]);
-					}
+			if ( filePath !== undefined && settings.ignorePatterns.length) {
+				if (semver.gte(this.executableVersion, '3.0.0')) {
+					// PHPCS v3 and up support this with STDIN files
+					lintArgs.push(`--ignore=${settings.ignorePatterns.join()}`);
+				} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
+					// We must determine this ourself for lower versions
+					return resolve([]);
 				}
 			}
 
