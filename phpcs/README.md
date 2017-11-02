@@ -129,8 +129,8 @@ The following values are applicable:
 
 ### **phpcs.ignorePatterns**
 
-[ Optional | **Type:** `array` | **Default:** `null` ]
-This setting controls the files and directories to ignore when linting your documents. You may specify an array of glob patterns to ignore files and directories.
+[ Optional | **Type:** `array` | **Default:** `[]` ]
+An array of glob patterns to skip files and folders that match when linting your documents.
 
 ```json
 {
