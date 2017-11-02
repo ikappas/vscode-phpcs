@@ -60,12 +60,13 @@
         },
         "phpcs.ignorePatterns": {
           "scope": "resource",
-          "type": [
-            "array",
-            "null"
-          ],
-          "default": null,
-          "description": "Optional. An array of glob patterns to ignore files and directories."
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "A glob pattern to skip files and folders that match."
+          },
+          "default": [],
+          "description": "An array of glob patterns to skip files and folders that match when linting your documents."
         },
         "phpcs.errorSeverity": {
           "scope": "resource",
