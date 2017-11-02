@@ -219,6 +219,9 @@ export class PhpcsPathResolver extends BasePhpcsPathResolver {
 				break;
 			}
 		}
+		if (resolvedPath === null) {
+			throw new Error('Unable to locate phpcs. Please add phpcs to your global path or use composer dependency manager to install it in your project locally.');
+		}
 		return resolvedPath;
 	}
 }
