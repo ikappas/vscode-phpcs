@@ -14,7 +14,7 @@ import fs = require("fs");
 import cc = require("./utils/charcode");
 import minimatch = require("minimatch");
 import semver = require("semver");
-import cs = require("cross-spawn");
+import spawn = require("cross-spawn");
 import os = require("os");
 
 interface PhpcsMessage {
@@ -323,174 +323,150 @@ export class PhpcsLinter {
 	}
 
 	public async lint(document: TextDocument, settings: PhpcsSettings): Promise<Diagnostic[]> {
-		return new Promise<Diagnostic[]>((resolve, reject) => {
 
-			// Process linting paths.
-			let filePath = Files.uriToFilePath(document.uri);
+		// Process linting paths.
+		let filePath = Files.uriToFilePath(document.uri);
 
-			// Make sure we capitalize the drive letter in paths on Windows.
-			if (filePath !== undefined && /^win/.test(process.platform)) {
-				let pathRoot: string = path.parse(filePath).root;
-				let noDrivePath = filePath.slice(Math.max(pathRoot.length - 1, 0));
-				filePath = path.join(pathRoot.toUpperCase(), noDrivePath);
+		// Make sure we capitalize the drive letter in paths on Windows.
+		if (filePath !== undefined && /^win/.test(process.platform)) {
+			let pathRoot: string = path.parse(filePath).root;
+			let noDrivePath = filePath.slice(Math.max(pathRoot.length - 1, 0));
+			filePath = path.join(pathRoot.toUpperCase(), noDrivePath);
+		}
+
+		let fileText = document.getText();
+
+		// Return empty on empty text.
+		if (fileText === '') {
+			return [];
+		}
+
+		// Process linting arguments.
+		let lintArgs = [ '--report=json' ];
+
+		// -q (quiet) option is available since phpcs 2.6.2
+		if (semver.gte(this.executableVersion, '2.6.2')) {
+			lintArgs.push('-q');
+		}
+
+		// Show sniff source codes in report output.
+		if (settings.showSources === true) {
+			lintArgs.push('-s');
+		}
+
+		// --encoding option is available since 1.3.0
+		if (semver.gte(this.executableVersion, '1.3.0')) {
+			lintArgs.push('--encoding=UTF-8');
+		}
+
+		if (settings.standard !== null) {
+			lintArgs.push(`--standard=${settings.standard}`);
+		}
+
+		// Check if file should be ignored (Skip for in-memory documents)
+		if (filePath !== undefined && settings.ignorePatterns.length) {
+			if (semver.gte(this.executableVersion, '3.0.0')) {
+				// PHPCS v3 and up support this with STDIN files
+				lintArgs.push(`--ignore=${settings.ignorePatterns.join()}`);
+			} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
+				// We must determine this ourself for lower versions
+				return [];
 			}
+		}
 
-			let fileText = document.getText();
+		lintArgs.push(`--error-severity=${settings.errorSeverity}`);
 
-			// Return empty on empty text.
-			if (fileText === '') {
-				return resolve([]);
+		let warningSeverity = settings.warningSeverity;
+		if (settings.showWarnings === false) {
+			warningSeverity = 0;
+		}
+		lintArgs.push(`--warning-severity=${warningSeverity}`);
+
+		let text = fileText;
+
+		// Determine the method of setting the file name
+		if (filePath !== undefined) {
+			switch (true) {
+
+				// PHPCS 2.6 and above support sending the filename in a flag
+				case semver.gte(this.executableVersion, '2.6.0'):
+					lintArgs.push(`--stdin-path=${filePath}`);
+					break;
+
+				// PHPCS 2.x.x before 2.6.0 supports putting the name in the start of the stream
+				case semver.satisfies(this.executableVersion, '>=2.0.0 <2.6.0'):
+					// TODO: This needs to be document specific.
+					const eolChar = os.EOL;
+					text = `phpcs_input_file: ${filePath}${eolChar}${fileText}`;
+					break;
+
+				// PHPCS v1 supports stdin, but ignores all filenames.
+				default:
+					// Nothing to do
+					break;
 			}
+		}
 
-			// Process linting arguments.
-			let lintArgs = [ '--report=json' ];
+		// Finish off the parameter list
+		lintArgs.push('-');
 
-			// -q (quiet) option is available since phpcs 2.6.2
-			if (semver.gte(this.executableVersion, '2.6.2')) {
-				lintArgs.push('-q');
-			}
+		const forcedKillTime = 1000 * 60 * 5; // ms * s * m: 5 minutes
+		const options = {
+			env: process.env,
+			encoding: "utf8",
+			timeout: forcedKillTime,
+			tty: true,
+			input: text,
+		};
 
-			// Show sniff source codes in report output.
-			if (settings.showSources === true) {
-				lintArgs.push('-s');
-			}
+		let phpcs = spawn.sync(this.executablePath, lintArgs, options);
+		let stdout = phpcs.stdout.toString().trim();
+		let stderr = phpcs.stderr.toString().trim();
+		let match = null;
 
-			// --encoding option is available since 1.3.0
-			if (semver.gte(this.executableVersion, '1.3.0')) {
-				lintArgs.push('--encoding=UTF-8');
-			}
-
-			if (settings.standard !== null) {
-				lintArgs.push(`--standard=${settings.standard}`);
-			}
-
-			// Check if file should be ignored (Skip for in-memory documents)
-			if ( filePath !== undefined && settings.ignorePatterns.length) {
-				if (semver.gte(this.executableVersion, '3.0.0')) {
-					// PHPCS v3 and up support this with STDIN files
-					lintArgs.push(`--ignore=${settings.ignorePatterns.join()}`);
-				} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
-					// We must determine this ourself for lower versions
-					return resolve([]);
+		// Determine whether we have an error in stderr.
+		if (stderr !== '') {
+			if (match = stderr.match(/^(?:PHP\s?)FATAL\s?ERROR:\s?(.*)/i)) {
+				let error = match[1].trim();
+				if (match = error.match(/^Uncaught exception '.*' with message '(.*)'/)) {
+					throw new Error(match[1]);
 				}
+				throw new Error(error);
 			}
+			throw new Error(`Unknown error ocurred. Please verify that ${this.executablePath} ${lintArgs.join(' ')} returns a valid json object.`);
+		}
 
-			lintArgs.push(`--error-severity=${settings.errorSeverity}`);
-
-			let warningSeverity = settings.warningSeverity;
-			if (settings.showWarnings === false) {
-				warningSeverity = 0;
+		// Determine whether we have an error in stdout.
+		if (match = stdout.match(/^ERROR:\s?(.*)/i)) {
+			let error = match[1].trim();
+			if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
+				throw new Error(`The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.`);
 			}
-			lintArgs.push(`--warning-severity=${warningSeverity}`);
+			throw new Error(error);
+		}
 
-			let text = fileText;
+		let diagnostics: Diagnostic[] = [];
+		let data = JSON.parse(stdout);
 
-			// Determine the method of setting the file name
-			if (filePath !== undefined) {
-				switch (true) {
-
-					// PHPCS 2.6 and above support sending the filename in a flag
-					case semver.gte(this.executableVersion, '2.6.0'):
-						lintArgs.push(`--stdin-path=${filePath}`);
-						break;
-
-					// PHPCS 2.x.x before 2.6.0 supports putting the name in the start of the stream
-					case semver.satisfies(this.executableVersion, '>=2.0.0 <2.6.0'):
-						// TODO: This needs to be document specific.
-						const eolChar = os.EOL;
-						text = `phpcs_input_file: ${filePath}${eolChar}${fileText}`;
-						break;
-
-					// PHPCS v1 supports stdin, but ignores all filenames.
-					default:
-						// Nothing to do
-						break;
-				}
+		let messages: Array<PhpcsMessage>;
+		if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
+			const fileRealPath = fs.realpathSync(filePath);
+			if (!data.files[fileRealPath]) {
+				return [];
 			}
+			({ messages } = data.files[fileRealPath]);
+		} else {
+			// PHPCS v1 can't associate a filename with STDIN input
+			if (!data.files.STDIN) {
+				return [];
+			}
+			({ messages } = data.files.STDIN);
+		}
 
-			// Finish off the parameter list
-			lintArgs.push('-');
-
-			const forcedKillTime = 1000 * 60 * 5; // ms * s * m: 5 minutes
-			const options = {
-				env: process.env,
-				encoding: "utf8",
-				timeout: forcedKillTime,
-			};
-
-			let phpcs = cs.spawn(this.executablePath, lintArgs, options);
-
-			let stdout = '';
-			phpcs.stdout.on("data", (buffer: Buffer) => {
-				stdout += buffer.toString();
-			});
-
-			let stderr = '';
-			phpcs.stderr.on("data", (buffer: Buffer) => {
-				stderr += buffer.toString();
-			});
-
-			phpcs.on("close", () => {
-				try {
-					let result = stdout.trim();
-					let match = null;
-
-					if (stderr !== '') {
-
-						result = stderr;
-
-						if (match = result.match(/^(?:PHP\s?)FATAL\s?ERROR:\s?(.*)/i)) {
-							let error = match[1].trim();
-							if (match = error.match(/^Uncaught exception '.*' with message '(.*)'/)) {
-								throw new Error(match[1]);
-							}
-							throw new Error(error);
-						}
-
-						throw new Error(`Unknown error ocurred. Please verify that ${this.executablePath} ${lintArgs.join(' ')} returns a valid json object.`);
-					}
-
-					// Determine whether we have an error and report it otherwise send back the diagnostics.
-					if (match = result.match(/^ERROR:\s?(.*)/i)) {
-						let error = match[1].trim();
-						if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
-							throw new Error(`The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.`);
-						}
-						throw new Error(error);
-					}
-
-					let diagnostics: Diagnostic[] = [];
-					let data = JSON.parse(result);
-
-					let messages : Array<PhpcsMessage>;
-					if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
-						const fileRealPath = fs.realpathSync(filePath);
-						if (!data.files[fileRealPath]) {
-							resolve([]);
-						}
-						({ messages } = data.files[fileRealPath]);
-					} else {
-						// PHPCS v1 can't associate a filename with STDIN input
-						if (!data.files.STDIN) {
-						resolve([]);
-						}
-						({ messages } = data.files.STDIN);
-					}
-
-					messages.map((message) => {
-						diagnostics.push(makeDiagnostic(document, message, settings.showSources));
-					});
-
-					resolve(diagnostics);
-				}
-				catch (error) {
-					reject(error);
-				}
-			});
-
-			phpcs.stdin.setDefaultEncoding('utf8');
-			phpcs.stdin.write(text);
-			phpcs.stdin.end();
+		messages.map((message) => {
+			diagnostics.push(makeDiagnostic(document, message, settings.showSources));
 		});
+
+		return diagnostics;
 	}
 }
