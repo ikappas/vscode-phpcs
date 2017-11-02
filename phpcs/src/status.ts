@@ -4,7 +4,7 @@
  * ------------------------------------------------------------------------------------------ */
 "use strict";
 
-import { window, StatusBarAlignment, StatusBarItem, OutputChannel } from "vscode";
+import { window, StatusBarAlignment, StatusBarItem } from "vscode";
 
 class Timer {
 
@@ -79,13 +79,11 @@ export class PhpcsStatus {
 	private spinnerIndex = 0;
 	private spinnerSequence: string[] = [ "|", "/", "-", "\\" ];
 	private timer: Timer;
-	private outputChannel: OutputChannel;
 
 	public startProcessing(uri: string) {
 		this.documents.push(uri);
 		this.processing += 1;
 		this.getTimer().start();
-		this.getOutputChannel().appendLine( `linting started on: ${uri}` );
 		this.getStatusBarItem().show();
 	}
 
@@ -94,7 +92,6 @@ export class PhpcsStatus {
 		let index = this.documents.indexOf(uri);
 		if (index !== undefined) {
 			this.documents.slice(index, 1);
-			this.getOutputChannel().appendLine( `linting completed on: ${uri}` );
 		}
 		if (this.processing === 0) {
 			this.getTimer().stop();
@@ -139,12 +136,6 @@ export class PhpcsStatus {
 			this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
 		}
 		return this.statusBarItem;
-	}
-	private getOutputChannel(): OutputChannel {
-		if (!this.outputChannel) {
-			this.outputChannel = window.createOutputChannel("phpcs");
-		}
-		return this.outputChannel;
 	}
 
 	dispose() {
