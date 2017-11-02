@@ -180,24 +180,14 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 	async resolve(): Promise<string> {
 		let resolvedPath = null;
 		if (this.enabled && this.workspacePath) {
-			// Determine whether composer.json exists in our workspace root.
-			if (this.hasComposerJson()) {
-
-				// Determine whether composer is installed.
-				if (this.hasComposerLock()) {
-					// Determine whether vendor/bin/phpcs exists only when project depends on phpcs.
-					if (this.hasComposerDependency()) {
-						let vendorPath = this.getVendorPath();
-						if (fs.existsSync(vendorPath)) {
-							resolvedPath = vendorPath;
-						} else {
-							let relativeVendorPath = path.relative(this.workspacePath, vendorPath);
-							throw new Error(`Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to install your dependencies using "composer install".`);
-						}
-					}
-
+			// Determine whether composer.json and composer.lock exist and phpcs is defined as a dependency.
+			if (this.hasComposerJson() && this.hasComposerLock() && this.hasComposerDependency()) {
+				let vendorPath = this.getVendorPath();
+				if (fs.existsSync(vendorPath)) {
+					resolvedPath = vendorPath;
 				} else {
-					throw new Error(`A composer configuration file was found at the root of your project but seems uninitialized. You may need to initialize your dependencies using "composer install".`);
+					let relativeVendorPath = path.relative(this.workspacePath, vendorPath);
+					throw new Error(`Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to run "composer install" or set your phpcs.executablePath manually.`);
 				}
 			}
 		}
