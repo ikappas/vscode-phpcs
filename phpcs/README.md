@@ -12,7 +12,7 @@ Before using this plugin, you must ensure that `phpcs` is installed on your syst
 
 Once phpcs is installed, you can proceed to install the vscode-phpcs plugin if it is not yet installed.
 
-> **NOTE:** This plugin will detect whether your project has been set up to use phpcs via composer and use the project specific `phpcs` over the system-wide installation of `phpcs` automatically.
+> **NOTE:** This plugin will detect whether your project has been set up to use phpcs via composer and use the project specific `phpcs` over the system-wide installation of `phpcs` automatically. This feature requires that both composer.json and composer.lock file exist in your workspace root or the `phpcs.composerJsonPath` in order to check for the composer dependency. If you wish to bypass this feature you can set the `phpcs.executablePath` configuration setting.
 
 ### System-wide Installation
 
