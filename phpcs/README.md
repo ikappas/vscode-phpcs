@@ -60,17 +60,20 @@ There are various options that can be configured by making changes to your user 
 ### **phpcs.enable**
 
 [ Optional | **Default**: `true` ]
+
 This setting controls whether `phpcs` linting is enabled.
 
 ### **phpcs.executablePath**
 
 [ Optional | **Default**: `null` ]
+
 This setting controls the executable path for the `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
 If omitted, the plugin will try to locate the path parsing your composer configuration or the global path.
 
 ### **phpcs.standard**
 
 [ Optional | **Default:** `null` ]
+
 This setting controls the coding standard used by `phpcs`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
 
 > **NOTE:** While using composer dependency manager over global installation make sure you use the phpcs commands under your project scope !
@@ -153,26 +156,31 @@ An array of glob patterns to skip files and folders that match when linting your
 ### **phpcs.errorSeverity**
 
 [ Optional | **Type:** `number` | **Default:** `5` ]
+
 The minimum severity an error must have to be displayed. You may specify an integer value.
 
 ### **phpcs.warningSeverity**
 
 [ Optional | **Type:** `number` | **Default:** `5` ]
+
 The minimum severity a warning must have to be displayed. You may specify an integer value.
 
 ### **phpcs.showWarnings**
 
 [ Optional | **Default**: `true` ]
+
 Control whether warnings are displayed.
 
 ### **phpcs.showSources**
 
 [ Optional | **Default**: `false` ]
+
 Show sniff source codes in diagnostic messages.
 
 ### **phpcs.trace.server**
 
 [ Optional | **Default**: `off` ]
+
 This setting controls whether the trace server is activated. Possible values you can use is `off`, `messages` or `verbose`.
 
 ## Advanced Configuration
@@ -180,6 +188,7 @@ This setting controls whether the trace server is activated. Possible values you
 ### **phpcs.composerJsonPath**
 
 [ Optional | **Default**: `composer.json` ]
+
 This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
 ## Acknowledgements
