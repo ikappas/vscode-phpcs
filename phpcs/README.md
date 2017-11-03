@@ -22,6 +22,7 @@ The `phpcs` linter can be installed in your system using the PHP Extension and A
 
 1. Install [pear](http://pear.php.net).
 1. Install `phpcs` by typing the following in a terminal:
+
     ```bash
     pear install PHP_CodeSniffer
     ```
@@ -32,6 +33,7 @@ The `phpcs` linter can be installed globally using the Composer Dependency Manag
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
 1. Require `phpcs` package by typing the following in a terminal:
+
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
@@ -42,6 +44,7 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
 1. Require `phpcs` package by typing the following at the root of your project in a terminal:
+
     ```bash
     composer require --dev squizlabs/php_codesniffer
     ```
@@ -82,58 +85,79 @@ This setting controls the coding standard used by `phpcs`. You may specify the n
 The following values are applicable:
 
 1. This setting can be set to `null`, which is the default behavior and uses the `default_standard` when set in the `phpcs` configuration or fallback to the `Pear` coding standard.
+
     ```json
     {
         "phpcs.standard": null
     }
     ```
+
     You may set the `default_standard` used by phpcs using the following command:
+
     ```bash
     phpcs --config-set default_standard <value>
     ```
+
     or when using composer dependency manager from the root of your project issue the following command:
+
     ```bash
     ./vendor/bin/phpcs --config-set default_standard <value>
     ```
+
 1. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
+
     ```json
     {
         "phpcs.standard": "PSR2"
     }
     ```
+
 1. The setting can me set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
+
     ```json
     {
         "phpcs.standard": "WordPress"
     }
     ```
+
     After you install the custom coding standard, you can make it available to phpcs by issuing the following command:
+
     ```bash
     phpcs --config-set installed_paths <path/to/custom/coding/standard>
     ```
+
     or when using composer dependency manager from the root of your project issue the following command:
+
     ```bash
     ./vendor/bin/phpcs --config-set installed_paths <path/to/custom/coding/standard>
     ```
+
 1. The setting can be set to the absolute path to a custom coding standard:
+
     ```json
     {
         "phpcs.standard": "/path/to/coding/standard"
     }
     ```
+
     or you can use the path to a custom ruleset:
+
     ```json
     {
         "phpcs.standard": "/path/to/project/phpcs.xml"
     }
     ```
+
 1. The setting can be set to your workspace relative path to a custom coding standard:
+
     ```json
     {
         "phpcs.standard": "./vendor/path/to/coding/standard"
     }
     ```
+
     or you can use the path to your project's custom ruleset:
+
     ```json
     {
         "phpcs.standard": "./phpcs.xml"
