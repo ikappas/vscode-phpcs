@@ -21,16 +21,17 @@ Once phpcs is installed, you can proceed to install the vscode-phpcs plugin if i
 The `phpcs` linter can be installed in your system using the PHP Extension and Application Repository (PEAR).
 
 1. Install [pear](http://pear.php.net).
-2. Install `phpcs` by typing the following in a terminal:
+1. Install `phpcs` by typing the following in a terminal:
     ```bash
     pear install PHP_CodeSniffer
     ```
+
 #### Using Composer
 
 The `phpcs` linter can be installed globally using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-2. Require `phpcs` package by typing the following in a terminal:
+1. Require `phpcs` package by typing the following in a terminal:
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
@@ -40,7 +41,7 @@ The `phpcs` linter can be installed globally using the Composer Dependency Manag
 The `phpcs` linter can be installed in your project using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-2. Require `phpcs` package by typing the following at the root of your project in a terminal:
+1. Require `phpcs` package by typing the following at the root of your project in a terminal:
     ```bash
     composer require --dev squizlabs/php_codesniffer
     ```
@@ -48,10 +49,10 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 ### Plugin Installation
 
 1. Open Visual Studio Code.
-2. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
-3. Type ext install phpcs to find the extension.
-4. Press Enter or click the cloud icon to install it.
-5. Restart Visual Studio Code when prompted.
+1. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
+1. Type ext install phpcs to find the extension.
+1. Press Enter or click the cloud icon to install it.
+1. Restart Visual Studio Code when prompted.
 
 ## Basic Configuration
 
@@ -94,13 +95,13 @@ The following values are applicable:
     ```bash
     ./vendor/bin/phpcs --config-set default_standard <value>
     ```
-2. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
+1. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
     ```json
     {
         "phpcs.standard": "PSR2"
     }
     ```
-3. The setting can me set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
+1. The setting can me set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
     ```json
     {
         "phpcs.standard": "WordPress"
@@ -114,7 +115,7 @@ The following values are applicable:
     ```bash
     ./vendor/bin/phpcs --config-set installed_paths <path/to/custom/coding/standard>
     ```
-4. The setting can be set to the absolute path to a custom coding standard:
+1. The setting can be set to the absolute path to a custom coding standard:
     ```json
     {
         "phpcs.standard": "/path/to/coding/standard"
@@ -126,7 +127,7 @@ The following values are applicable:
         "phpcs.standard": "/path/to/project/phpcs.xml"
     }
     ```
-5. The setting can be set to your workspace relative path to a custom coding standard:
+1. The setting can be set to your workspace relative path to a custom coding standard:
     ```json
     {
         "phpcs.standard": "./vendor/path/to/coding/standard"
