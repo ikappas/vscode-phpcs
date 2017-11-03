@@ -180,7 +180,7 @@ This setting controls whether the trace server is activated. Possible values you
 ### **phpcs.composerJsonPath**
 
 [ Optional | **Default**: `composer.json` ]
-This setting allows you to override the path that is searched a composer.json file.
+This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
 ## Acknowledgements
 
