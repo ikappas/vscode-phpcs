@@ -53,7 +53,7 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 4. Press Enter or click the cloud icon to install it.
 5. Restart Visual Studio Code when prompted.
 
-## Configuration
+## Basic Configuration
 
 There are various options that can be configured by making changes to your user or workspace preferences.
 
