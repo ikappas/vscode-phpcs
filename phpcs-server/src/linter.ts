@@ -201,7 +201,9 @@ export class PhpcsPathResolver extends BasePhpcsPathResolver {
 
 	constructor(workspacePath: string, settings: PhpcsSettings) {
 		super(workspacePath);
-		this.resolvers.push(new ComposerPhpcsPathResolver(workspacePath, settings.composerJsonPath) );
+		if (this.workspacePath !== null) {
+			this.resolvers.push(new ComposerPhpcsPathResolver(workspacePath, settings.composerJsonPath) );
+		}
 		this.resolvers.push( new GlobalPhpcsPathResolver( workspacePath ) );
 	}
 
