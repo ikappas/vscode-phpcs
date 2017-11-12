@@ -19,6 +19,7 @@ import {
 
 import * as proto from "./protocol";
 import { PhpcsLinter, PhpcsSettings, PhpcsPathResolver } from "./linter";
+import { StringResources as SR } from "./helpers/strings";
 
 class PhpcsServer {
 
@@ -193,7 +194,7 @@ class PhpcsServer {
 			proto.DidStartValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
 		);
-		this.connection.tracer.log(`Linting started on: ${document.uri}`);
+		this.connection.tracer.log(SR.format(SR.DidStartValidateTextDocument, document.uri));
 	}
 
 	/**
@@ -207,7 +208,7 @@ class PhpcsServer {
 			proto.DidEndValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
 		);
-		this.connection.tracer.log(`Linting completed on: ${document.uri}`);
+		this.connection.tracer.log(SR.format(SR.DidEndValidateTextDocument, document.uri));
 	}
 
 	/**
@@ -258,7 +259,7 @@ class PhpcsServer {
 				message = message.substr(5);
 			}
 		} else {
-			message = `An unknown error occurred while validating file: ${Files.uriToFilePath(document.uri) }`;
+			message = SR.format(SR.UnknownErrorWhileValidatingTextDocument, Files.uriToFilePath(document.uri));
 		}
 		return message;
 	}

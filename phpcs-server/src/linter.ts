@@ -16,6 +16,7 @@ import minimatch = require("minimatch");
 import semver = require("semver");
 import spawn = require("cross-spawn");
 import os = require("os");
+import { StringResources as SR } from "./helpers/strings";
 
 interface PhpcsMessage {
 	message: string;
@@ -187,7 +188,7 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 					resolvedPath = vendorPath;
 				} else {
 					let relativeVendorPath = path.relative(this.workspacePath, vendorPath);
-					throw new Error(`Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to run "composer install" or set your phpcs.executablePath manually.`);
+					throw new Error(SR.format(SR.ComposerDependencyNotFoundError, relativeVendorPath));
 				}
 			}
 		}
@@ -217,7 +218,7 @@ export class PhpcsPathResolver extends BasePhpcsPathResolver {
 			}
 		}
 		if (resolvedPath === null) {
-			throw new Error('Unable to locate phpcs. Please add phpcs to your global path or use composer dependency manager to install it in your project locally.');
+			throw new Error(SR.UnableToLocatePhpcsError);
 		}
 		return resolvedPath;
 	}
@@ -302,15 +303,15 @@ export class PhpcsLinter {
 			const versionMatches = result.toString().match(versionPattern);
 
 			if (versionMatches === null) {
-				throw new Error('Invalid version string encountered!');
+				throw new Error(SR.InvalidVersionStringError);
 			}
 
 			const executableVersion = versionMatches[1];
 			return new PhpcsLinter(executablePath, executableVersion);
 
 		} catch(error) {
-			let message = error.message ? error.message : 'Please add phpcs to your global path or use composer dependency manager to install it in your project locally.';
-			throw new Error(`Unable to locate phpcs. ${message}`);
+			let message = error.message ? error.message : SR.CreateLinterErrorDefaultMessage;
+			throw new Error(SR.format(SR.CreateLinterError, message));
 		}
 	}
 
@@ -425,14 +426,14 @@ export class PhpcsLinter {
 				}
 				throw new Error(error);
 			}
-			throw new Error(`Unknown error ocurred. Please verify that ${this.executablePath} ${lintArgs.join(' ')} returns a valid json object.`);
+			throw new Error(SR.format(SR.UnknownExecutionError, `${this.executablePath} ${lintArgs.join(' ')}`));
 		}
 
 		// Determine whether we have an error in stdout.
 		if (match = stdout.match(/^ERROR:\s?(.*)/i)) {
 			let error = match[1].trim();
 			if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
-				throw new Error(`The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.`);
+				throw new Error(SR.format(SR.CodingStandardNotInstalledError, match[1]));
 			}
 			throw new Error(error);
 		}
