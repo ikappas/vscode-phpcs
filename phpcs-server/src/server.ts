@@ -18,7 +18,8 @@ import {
 } from 'vscode-languageserver';
 
 import * as proto from "./protocol";
-import { PhpcsLinter, PhpcsSettings, PhpcsPathResolver } from "./linter";
+import { PhpcsLinter, PhpcsPathResolver } from "./linter";
+import { PhpcsSettings } from "./settings";
 import { StringResources as SR } from "./helpers/strings";
 
 class PhpcsServer {

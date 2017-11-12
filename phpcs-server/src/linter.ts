@@ -17,6 +17,7 @@ import semver = require("semver");
 import spawn = require("cross-spawn");
 import os = require("os");
 import { StringResources as SR } from "./helpers/strings";
+import { PhpcsSettings } from "./settings";
 
 interface PhpcsMessage {
 	message: string;
@@ -28,17 +29,7 @@ interface PhpcsMessage {
 	source?: string;
 }
 
-export interface PhpcsSettings {
-	enable: boolean;
-	executablePath: string;
-	composerJsonPath: string;
-	standard: string;
-	showSources: boolean;
-	showWarnings: boolean;
-	ignorePatterns: string[];
-	warningSeverity: number;
-	errorSeverity: number;
-}
+
 
 abstract class BasePhpcsPathResolver {
 	protected workspacePath: string;
