@@ -2,6 +2,7 @@
 */out/
 *.vsix
 phpcs/server
+package-lock.json
 
 # General
 .
