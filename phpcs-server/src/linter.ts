@@ -11,7 +11,7 @@ import {
 import cp = require("child_process");
 import path = require("path");
 import fs = require("fs");
-import cc = require("./utils/charcode");
+import cc = require("./helpers/charcode");
 import minimatch = require("minimatch");
 import semver = require("semver");
 import spawn = require("cross-spawn");
