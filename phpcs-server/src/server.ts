@@ -40,48 +40,25 @@ class PhpcsServer {
 		this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 		this.documents = new TextDocuments();
 		this.documents.listen(this.connection);
-		this.connection.onInitialize((params): any => {
-			return this.onInitialize(params);
-		});
-		this.connection.onDidChangeConfiguration((params) => {
-			this.onDidChangeConfiguration(params).catch((error: Error) => {
-				this.showErrorMessage(error.message);
-			});
-		});
-		this.connection.onDidChangeWatchedFiles((params) => {
-			this.onDidChangeWatchedFiles(params).catch((error: Error) => {
-				this.showErrorMessage(error.message);
-			});
-		});
-		this.documents.onDidChangeContent((event) =>{
-			this.onDidChangeDocument(event).catch((error: Error) => {
-				this.showErrorMessage(error.message);
-			});
-		});
-		this.documents.onDidOpen((event) => {
-			this.onDidOpenDocument(event).catch((error: Error) => {
-				this.showErrorMessage(error.message);
-			});
-		});
-		this.documents.onDidSave((event) => {
-			this.onDidSaveDocument(event).catch((error: Error) => {
-				this.showErrorMessage(error.message);
-			});
-		});
-		this.documents.onDidClose((event) => {
-			this.onDidCloseDocument(event).catch((error: Error) => {
-				this.showErrorMessage(error.message);
-			});
-		});
+		this.connection.onInitialize(this.safeEventHandler(this.onInitialize));
+		this.connection.onDidChangeConfiguration(this.safeEventHandler(this.onDidChangeConfiguration));
+		this.connection.onDidChangeWatchedFiles(this.safeEventHandler(this.onDidChangeWatchedFiles));
+		this.documents.onDidChangeContent(this.safeEventHandler(this.onDidChangeDocument));
+		this.documents.onDidOpen(this.safeEventHandler(this.onDidOpenDocument));
+		this.documents.onDidSave(this.safeEventHandler(this.onDidSaveDocument));
+		this.documents.onDidClose(this.safeEventHandler(this.onDidCloseDocument));
 	}
 
 	/**
-	 * Show an error message.
-	 *
-	 * @param message The message to show.
+	 * Safely handle event notifications.
+	 * @param callback An event handler.
 	 */
-	private showErrorMessage(message: string): void {
-		this.connection.window.showErrorMessage(`phpcs: ${message}`);
+	private safeEventHandler(callback: (...args: any[]) => Promise<any>): (...args: any[]) => Promise<any> {
+		return (...args: any[]): Promise<any> => {
+			return callback.apply(this, args).catch((error: Error) => {
+				this.connection.window.showErrorMessage(`phpcs: ${error.message}`);
+			});
+		};
 	}
 
 	/**
@@ -90,7 +67,7 @@ class PhpcsServer {
 	 * @param params The initialization parameters.
 	 * @return A promise of initialization result or initialization error.
 	 */
-	private onInitialize(params: InitializeParams): InitializeResult {
+	private async onInitialize(params: InitializeParams): Promise<InitializeResult> {
 		this.workspacePath = params.rootPath;
 		let result: InitializeResult = { capabilities: { textDocumentSync: this.documents.syncKind } };
 		return result;
