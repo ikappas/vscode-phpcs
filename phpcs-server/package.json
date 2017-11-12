@@ -17,7 +17,7 @@
     "url": "https://github.com/ikappas/vscode-phpcs/issues"
   },
   "dependencies": {
-    "vscode-languageserver": "^3.4.3",
+    "vscode-languageserver": "^3.5.0",
     "cross-spawn": "^5.1.0",
     "minimatch": "^3.0.4",
     "semver": "^5.4.1"

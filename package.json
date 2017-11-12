@@ -22,6 +22,6 @@
     "@types/mocha": "^2.2.44",
     "@types/node": "^6.0.90",
     "@types/semver": "^5.4.0",
-    "typescript": "^2.5.3"
+    "typescript": "^2.6.1"
   }
 }

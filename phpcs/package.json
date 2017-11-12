@@ -23,7 +23,7 @@
     "Linters"
   ],
   "engines": {
-    "vscode": "^1.16.0"
+    "vscode": "^1.18.0"
   },
   "activationEvents": [
     "onLanguage:php"
@@ -117,6 +117,6 @@
   },
   "dependencies": {
     "vscode": "^1.1.6",
-    "vscode-languageclient": "^3.4.5"
+    "vscode-languageclient": "^3.5.0"
   }
 }
