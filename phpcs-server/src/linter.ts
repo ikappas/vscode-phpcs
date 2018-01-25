@@ -32,192 +32,6 @@ interface PhpcsMessage {
 	source?: string;
 }
 
-
-
-abstract class BasePhpcsPathResolver {
-	protected workspaceRoot: string;
-	protected phpcsExecutableFile: string;
-
-	constructor(workspaceRoot: string) {
-		this.workspaceRoot = workspaceRoot;
-		let extension = /^win/.test(process.platform) ? ".bat" : "";
-		this.phpcsExecutableFile = `phpcs${extension}`;
-	}
-
-	abstract async resolve(): Promise<string>;
-}
-
-class GlobalPhpcsPathResolver extends BasePhpcsPathResolver {
-	async resolve(): Promise<string> {
-		let resolvedPath = null;
-		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
-		let globalPaths: string[] = process.env.PATH.split(pathSeparator);
-		globalPaths.some((globalPath: string) => {
-			let testPath = path.join( globalPath, this.phpcsExecutableFile );
-			if (fs.existsSync(testPath)) {
-				resolvedPath = testPath;
-				return true;
-			}
-			return false;
-		});
-		return resolvedPath;
-	}
-}
-
-class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
-
-	protected readonly enabled: boolean;
-	protected readonly composerJsonPath: string;
-	protected readonly composerLockPath: string;
-
-	/**
-	 * Class constructor.
-	 *
-	 * @param workspaceRoot The workspace root path.
-	 * @param composerJsonPath The path to composer.json.
-	 */
-	constructor(workspaceRoot: string, composerJsonPath?: string) {
-		super(workspaceRoot);
-
-		if (!path.isAbsolute(composerJsonPath)) {
-			composerJsonPath = path.join(workspaceRoot, composerJsonPath);
-		}
-
-		try {
-			this.composerJsonPath = fs.realpathSync(composerJsonPath);
-			this.composerLockPath = path.join(path.dirname(this.composerJsonPath), 'composer.lock');
-			this.enabled = true;
-		} catch(error) {
-			this.enabled = false;
-		}
-	}
-
-	/**
-	 * Determine whether composer.json exists at the root path.
-	 */
-	hasComposerJson(): boolean {
-		try {
-			return fs.existsSync(this.composerJsonPath);
-		} catch(error) {
-			return false;
-		}
-	}
-
-	/**
-	 * Determine whether composer.lock exists at the root path.
-	 */
-	hasComposerLock(): boolean {
-	   try {
-			return fs.existsSync(this.composerLockPath);
-		} catch(error) {
-			return false;
-		}
-	}
-
-	/**
-	 * Determine whether phpcs is set as a composer dependency.
-	 */
-	hasComposerDependency(): boolean {
-		// Safely load composer.lock
-		let dependencies = null;
-		try {
-			dependencies = JSON.parse(fs.readFileSync(this.composerLockPath, "utf8"));
-		} catch(error) {
-			dependencies = {};
-		}
-
-		// Determine phpcs dependency.
-		let search = [];
-		if (dependencies["packages-dev"]) {
-			search.push(dependencies["packages-dev"]);
-		}
-		if (dependencies["packages"]) {
-			search.push(dependencies["packages"]);
-		}
-
-		return search.some(pkgs => {
-			let match = pkgs.filter((pkg: any) => {
-				return pkg.name === "squizlabs/php_codesniffer";
-			});
-			return match.length !== 0;
-		});
-	}
-
-	/**
-	 * Get the composer vendor path.
-	 */
-	getVendorPath(): string {
-		let basePath = path.dirname(this.composerJsonPath);
-		let vendorPath = path.join(basePath, "vendor", "bin", this.phpcsExecutableFile);
-
-		// Safely load composer.json
-		let config = null;
-		try {
-			config = JSON.parse(fs.readFileSync(this.composerJsonPath, "utf8"));
-		}
-		catch (error) {
-			config = {};
-		}
-
-		// Check vendor-bin configuration
-		if (config["config"] && config["config"]["vendor-dir"]) {
-			vendorPath = path.join(basePath, config["config"]["vendor-dir"], "bin", this.phpcsExecutableFile);
-		}
-
-		// Check bin-bin configuration
-		if (config["config"] && config["config"]["bin-dir"]) {
-			vendorPath = path.join(basePath, config["config"]["bin-dir"], this.phpcsExecutableFile);
-		}
-
-		return vendorPath;
-	}
-
-	async resolve(): Promise<string> {
-		let resolvedPath = null;
-		if (this.enabled && this.workspaceRoot) {
-			// Determine whether composer.json and composer.lock exist and phpcs is defined as a dependency.
-			if (this.hasComposerJson() && this.hasComposerLock() && this.hasComposerDependency()) {
-				let vendorPath = this.getVendorPath();
-				if (fs.existsSync(vendorPath)) {
-					resolvedPath = vendorPath;
-				} else {
-					let relativeVendorPath = path.relative(this.workspaceRoot, vendorPath);
-					throw new Error(SR.format(SR.ComposerDependencyNotFoundError, relativeVendorPath));
-				}
-			}
-		}
-		return resolvedPath;
-	}
-}
-
-export class PhpcsPathResolver extends BasePhpcsPathResolver {
-
-	private resolvers: Array<BasePhpcsPathResolver> = [];
-
-	constructor(workspaceRoot: string, settings: PhpcsSettings) {
-		super(workspaceRoot);
-		if (this.workspaceRoot !== null) {
-			this.resolvers.push(new ComposerPhpcsPathResolver(workspaceRoot, settings.composerJsonPath) );
-		}
-		this.resolvers.push( new GlobalPhpcsPathResolver( workspaceRoot ) );
-	}
-
-	async resolve(): Promise<string> {
-		let resolvedPath: string = null;
-		for (var i = 0, len = this.resolvers.length; i < len; i++) {
-			let resolverPath = await this.resolvers[i].resolve();
-			if (resolvedPath !== resolverPath) {
-				resolvedPath = resolverPath;
-				break;
-			}
-		}
-		if (resolvedPath === null) {
-			throw new Error(SR.UnableToLocatePhpcsError);
-		}
-		return resolvedPath;
-	}
-}
-
 function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources: boolean): Diagnostic {
 
 	let lines = document.getText().split("\n");
@@ -399,6 +213,7 @@ export class PhpcsLinter {
 
 		const forcedKillTime = 1000 * 60 * 5; // ms * s * m: 5 minutes
 		const options = {
+			cwd: settings.workspaceRoot !== null ? settings.workspaceRoot : undefined,
 			env: process.env,
 			encoding: "utf8",
 			timeout: forcedKillTime,
@@ -406,9 +221,9 @@ export class PhpcsLinter {
 			input: text,
 		};
 
-		let phpcs = spawn.sync(this.executablePath, lintArgs, options);
-		let stdout = phpcs.stdout.toString().trim();
-		let stderr = phpcs.stderr.toString().trim();
+		const phpcs = spawn.sync(this.executablePath, lintArgs, options);
+		const stdout = phpcs.stdout.toString().trim();
+		const stderr = phpcs.stderr.toString().trim();
 		let match = null;
 
 		// Determine whether we have an error in stderr.

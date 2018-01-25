@@ -10,32 +10,47 @@ import {
 	DidChangeWatchedFilesParams,
 	Files,
 	IConnection,
-	InitializeParams,
 	InitializeResult,
 	IPCMessageReader,
 	IPCMessageWriter,
+	Proposed,
+	ProposedFeatures,
 	PublishDiagnosticsParams,
 	TextDocument,
 	TextDocumentChangeEvent,
 	TextDocumentIdentifier,
-	TextDocuments,
+	TextDocuments
 } from 'vscode-languageserver';
 
-import * as path from 'path';
 import * as proto from "./protocol";
-import { PhpcsLinter, PhpcsPathResolver } from "./linter";
+import { PhpcsLinter } from "./linter";
 import { PhpcsSettings } from "./settings";
 import { StringResources as SR } from "./helpers/strings";
 
 class PhpcsServer {
 
 	private connection: IConnection;
-	private settings: PhpcsSettings;
-	private ready: boolean = false;
 	private documents: TextDocuments;
-	private linter: PhpcsLinter;
-	private workspaceRoot: string;
 	private validating: Map<string, TextDocument>;
+
+	// Cache the settings of all open documents
+	private hasConfigurationCapability: boolean = false;
+	private hasWorkspaceFolderCapability: boolean = false;
+
+	private globalSettings: PhpcsSettings;
+	private defaultSettings: PhpcsSettings = {
+		enable: true,
+		workspaceRoot: null,
+		executablePath: null,
+		composerJsonPath: null,
+		standard: null,
+		showSources: false,
+		showWarnings: true,
+		ignorePatterns: [],
+		warningSeverity: 5,
+		errorSeverity: 5,
+	};
+	private documentSettings: Map<string, Promise<PhpcsSettings>> = new Map();
 
 	/**
 	 * Class constructor.
@@ -44,10 +59,11 @@ class PhpcsServer {
 	 */
 	constructor() {
 		this.validating = new Map();
-		this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+		this.connection = createConnection(ProposedFeatures.all, new IPCMessageReader(process), new IPCMessageWriter(process));
 		this.documents = new TextDocuments();
 		this.documents.listen(this.connection);
 		this.connection.onInitialize(this.safeEventHandler(this.onInitialize));
+		this.connection.onInitialized(this.safeEventHandler(this.onDidInitialize));
 		this.connection.onDidChangeConfiguration(this.safeEventHandler(this.onDidChangeConfiguration));
 		this.connection.onDidChangeWatchedFiles(this.safeEventHandler(this.onDidChangeWatchedFiles));
 		this.documents.onDidChangeContent(this.safeEventHandler(this.onDidChangeDocument));
@@ -74,10 +90,35 @@ class PhpcsServer {
 	 * @param params The initialization parameters.
 	 * @return A promise of initialization result or initialization error.
 	 */
-	private async onInitialize(params: InitializeParams): Promise<InitializeResult> {
-		this.workspaceRoot = params.rootPath;
-		let result: InitializeResult = { capabilities: { textDocumentSync: this.documents.syncKind } };
-		return result;
+	private async onInitialize(params: any): Promise<InitializeResult> {
+		let capabilities = params.capabilities;
+
+		// Does the client support the `workspace/configuration` request?
+		// If not, we will fall back using global settings
+		this.hasWorkspaceFolderCapability = (capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace && !!(capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace.workspaceFolders;
+		this.hasConfigurationCapability = (capabilities as Proposed.ConfigurationClientCapabilities).workspace && !!(capabilities as Proposed.ConfigurationClientCapabilities).workspace.configuration;
+
+		if (this.hasWorkspaceFolderCapability) {
+			let folders = (params as Proposed.WorkspaceFoldersInitializeParams).workspaceFolders;
+			this.connection.tracer.log(SR.format("Initialize Folders: {0}", folders.map(f => { return f.name; }).join()));
+		}
+
+		return Promise.resolve<InitializeResult>({
+			capabilities: {
+				textDocumentSync: this.documents.syncKind
+			}
+		});
+	}
+
+	/**
+	 * Handles connection initialization completion.
+	 */
+	private async onDidInitialize(): Promise<void> {
+		if (this.hasWorkspaceFolderCapability) {
+			(this.connection.workspace as any).onDidChangeWorkspaceFolders((_event: Proposed.WorkspaceFoldersChangeEvent) => {
+				this.connection.tracer.log('Workspace folder change event received');
+			});
+		}
 	}
 
 	/**
@@ -87,8 +128,13 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidChangeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
-		this.settings = params.settings.phpcs;
-		await this.initializeLinter();
+		if (this.hasConfigurationCapability) {
+			// Reset all cached document settings
+			this.documentSettings.clear();
+		} else {
+			this.globalSettings = params.settings.phpcs as PhpcsSettings || this.defaultSettings;
+		}
+		await this.validateMany(this.documents.all());
 	}
 
 	/**
@@ -128,7 +174,19 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidCloseDocument(event: TextDocumentChangeEvent ): Promise<void> {
-  		this.connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
+		const uri = event.document.uri;
+
+		// Clear cached document settings.
+		if (this.documentSettings.has(uri)) {
+			this.documentSettings.delete(uri);
+		}
+
+		// Clear validating status.
+		if (this.validating.has(uri)) {
+			this.validating.delete(uri);
+		}
+
+  		this.connection.sendDiagnostics({ uri, diagnostics: [] });
 	}
 
 	/**
@@ -139,37 +197,6 @@ class PhpcsServer {
 	 */
 	private async onDidChangeDocument(event: TextDocumentChangeEvent ): Promise<void> {
 		await this.validateSingle(event.document);
-	}
-
-	/**
-	 * Initialize linter instance.
-	 */
-	private async initializeLinter() {
-		try {
-			let executablePath = this.settings.executablePath;
-			if (executablePath === null) {
-				let executablePathResolver = new PhpcsPathResolver(this.workspaceRoot, this.settings);
-				executablePath = await executablePathResolver.resolve();
-			} else if (!path.isAbsolute(executablePath)) {
-				executablePath = path.join(this.workspaceRoot, executablePath);
-			}
-
-			this.linter = await PhpcsLinter.create(executablePath);
-			this.ready = true;
-			this.validateMany(this.documents.all());
-		} catch (error) {
-			this.ready = false;
-			throw error;
-		}
-	}
-
-	/**
-	 * Initialize linter unless it is ready.
-	 */
-	private async initializeLinterUnlessReady() {
-		if (this.ready === false) {
-			await this.initializeLinter();
-		}
 	}
 
 	/**
@@ -226,16 +253,20 @@ class PhpcsServer {
 	 * @return void
 	 */
 	public async validateSingle(document: TextDocument): Promise<void> {
-		await this.initializeLinterUnlessReady();
-		if (this.ready === true && this.validating.has(document.uri) === false) {
-			this.sendStartValidationNotification(document);
-			let diagnostics = await this.linter.lint(document, this.settings).catch((error) => {
-				this.sendEndValidationNotification(document);
-				throw new Error(this.getExceptionMessage(error, document));
-			});
+		const { uri } = document;
+		if (this.validating.has(uri) === false) {
+			let settings = await this.getDocumentSettings(document);
+			if (settings.enable) {
+				this.sendStartValidationNotification(document);
+				let phpcs = await PhpcsLinter.create(settings.executablePath);
+				let diagnostics = await phpcs.lint(document, settings).catch((error) => {
+					this.sendEndValidationNotification(document);
+					throw new Error(this.getExceptionMessage(error, document));
+				});
 
-			this.sendEndValidationNotification(document);
-			this.sendDiagnostics({ uri: document.uri, diagnostics });
+				this.sendEndValidationNotification(document);
+				this.sendDiagnostics({ uri, diagnostics });
+			}
 		}
 	}
 
@@ -249,6 +280,29 @@ class PhpcsServer {
 		for (var i = 0, len = documents.length; i < len; i++) {
 			await this.validateSingle(documents[i]);
 		}
+	}
+
+	/**
+	 * Get the settings for the specified document.
+	 *
+	 * @param document The text document for which to get the settings.
+	 * @return A promise of PhpcsSettings.
+	 */
+	private async getDocumentSettings(document: TextDocument): Promise<PhpcsSettings> {
+		const { uri } = document;
+		let settings: Promise<PhpcsSettings>;
+		if (this.hasConfigurationCapability) {
+			if (this.documentSettings.has(uri)) {
+				settings = this.documentSettings.get(uri);
+			} else {
+				const configurationItem: Proposed.ConfigurationItem = uri.match(/^untitled:/) ? {} : { scopeUri: uri };
+				settings = (this.connection.workspace as any).getConfiguration(configurationItem);
+				this.documentSettings.set(uri, settings);
+			}
+		} else {
+			settings = Promise.resolve(this.globalSettings);
+		}
+		return settings;
 	}
 
 	/**
