@@ -14,6 +14,8 @@ Once phpcs is installed, you can proceed to install the vscode-phpcs plugin if i
 
 > **NOTE:** This plugin will detect whether your project has been set up to use phpcs via composer and use the project specific `phpcs` over the system-wide installation of `phpcs` automatically. This feature requires that both composer.json and composer.lock file exist in your workspace root or the `phpcs.composerJsonPath` in order to check for the composer dependency. If you wish to bypass this feature you can set the `phpcs.executablePath` configuration setting.
 
+> **WARNING:** PHPCS will not give you error "error: "phpcs: Unexpected token S in JSON at position 0" if you are using php <7.1.13 OR 7.2.1. This bug is fixed by php so just upgrade your php version to >=7.1.13 OR >=7.2.1.
+
 ### System-wide Installation
 
 #### Using PEAR

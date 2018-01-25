@@ -6,6 +6,9 @@
 
 Integrates [phpcs](https://github.com/squizlabs/PHP_CodeSniffer.git) into [Visual Studio Code](https://code.visualstudio.com/).
 
+# Warning:
+- Upgrade your php to >=7.1.13 or >=7.2.1 To avoid bug fixed by php in 7.1.x || 7.2.x.
+
 ## Setup Development Version
 
 - install the [Visual Studio Code](https://code.visualstudio.com/) [npm extension](https://marketplace.visualstudio.com/items?itemName=eg2.vscode-npm-script)
