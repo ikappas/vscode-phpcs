@@ -32,11 +32,11 @@ interface PhpcsMessage {
 
 
 abstract class BasePhpcsPathResolver {
-	protected workspacePath: string;
+	protected workspaceRoot: string;
 	protected phpcsExecutableFile: string;
 
-	constructor(workspacePath: string) {
-		this.workspacePath = workspacePath;
+	constructor(workspaceRoot: string) {
+		this.workspaceRoot = workspaceRoot;
 		let extension = /^win/.test(process.platform) ? ".bat" : "";
 		this.phpcsExecutableFile = `phpcs${extension}`;
 	}
@@ -70,14 +70,14 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 	/**
 	 * Class constructor.
 	 *
-	 * @param workspacePath The workspace path.
+	 * @param workspaceRoot The workspace root path.
 	 * @param composerJsonPath The path to composer.json.
 	 */
-	constructor(workspacePath: string, composerJsonPath?: string) {
-		super(workspacePath);
+	constructor(workspaceRoot: string, composerJsonPath?: string) {
+		super(workspaceRoot);
 
 		if (!path.isAbsolute(composerJsonPath)) {
-			composerJsonPath = path.join(workspacePath, composerJsonPath);
+			composerJsonPath = path.join(workspaceRoot, composerJsonPath);
 		}
 
 		try {
@@ -171,14 +171,14 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 
 	async resolve(): Promise<string> {
 		let resolvedPath = null;
-		if (this.enabled && this.workspacePath) {
+		if (this.enabled && this.workspaceRoot) {
 			// Determine whether composer.json and composer.lock exist and phpcs is defined as a dependency.
 			if (this.hasComposerJson() && this.hasComposerLock() && this.hasComposerDependency()) {
 				let vendorPath = this.getVendorPath();
 				if (fs.existsSync(vendorPath)) {
 					resolvedPath = vendorPath;
 				} else {
-					let relativeVendorPath = path.relative(this.workspacePath, vendorPath);
+					let relativeVendorPath = path.relative(this.workspaceRoot, vendorPath);
 					throw new Error(SR.format(SR.ComposerDependencyNotFoundError, relativeVendorPath));
 				}
 			}
@@ -191,12 +191,12 @@ export class PhpcsPathResolver extends BasePhpcsPathResolver {
 
 	private resolvers: Array<BasePhpcsPathResolver> = [];
 
-	constructor(workspacePath: string, settings: PhpcsSettings) {
-		super(workspacePath);
-		if (this.workspacePath !== null) {
-			this.resolvers.push(new ComposerPhpcsPathResolver(workspacePath, settings.composerJsonPath) );
+	constructor(workspaceRoot: string, settings: PhpcsSettings) {
+		super(workspaceRoot);
+		if (this.workspaceRoot !== null) {
+			this.resolvers.push(new ComposerPhpcsPathResolver(workspaceRoot, settings.composerJsonPath) );
 		}
-		this.resolvers.push( new GlobalPhpcsPathResolver( workspacePath ) );
+		this.resolvers.push( new GlobalPhpcsPathResolver( workspaceRoot ) );
 	}
 
 	async resolve(): Promise<string> {

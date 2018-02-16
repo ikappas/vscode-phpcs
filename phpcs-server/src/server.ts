@@ -14,6 +14,7 @@ import {
 	PublishDiagnosticsParams, Files,
 } from 'vscode-languageserver';
 
+import * as path from 'path';
 import * as proto from "./protocol";
 import { PhpcsLinter, PhpcsPathResolver } from "./linter";
 import { PhpcsSettings } from "./settings";
@@ -26,7 +27,7 @@ class PhpcsServer {
 	private ready: boolean = false;
 	private documents: TextDocuments;
 	private linter: PhpcsLinter;
-	private workspacePath: string;
+	private workspaceRoot: string;
 	private validating: Map<string, TextDocument>;
 
 	/**
@@ -67,7 +68,7 @@ class PhpcsServer {
 	 * @return A promise of initialization result or initialization error.
 	 */
 	private async onInitialize(params: InitializeParams): Promise<InitializeResult> {
-		this.workspacePath = params.rootPath;
+		this.workspaceRoot = params.rootPath;
 		let result: InitializeResult = { capabilities: { textDocumentSync: this.documents.syncKind } };
 		return result;
 	}
@@ -140,8 +141,10 @@ class PhpcsServer {
 		try {
 			let executablePath = this.settings.executablePath;
 			if (executablePath === null) {
-				let executablePathResolver = new PhpcsPathResolver(this.workspacePath, this.settings);
+				let executablePathResolver = new PhpcsPathResolver(this.workspaceRoot, this.settings);
 				executablePath = await executablePathResolver.resolve();
+			} else if (!path.isAbsolute(executablePath)) {
+				executablePath = path.join(this.workspaceRoot, executablePath);
 			}
 
 			this.linter = await PhpcsLinter.create(executablePath);
