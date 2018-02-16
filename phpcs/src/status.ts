@@ -4,7 +4,11 @@
  * ------------------------------------------------------------------------------------------ */
 "use strict";
 
-import { window, StatusBarAlignment, StatusBarItem } from "vscode";
+import {
+	StatusBarAlignment,
+	StatusBarItem,
+	window
+} from "vscode";
 
 class Timer {
 
@@ -49,7 +53,7 @@ class Timer {
 				this.tick();
 			}, this.interval);
 		}
-	};
+	}
 
 	/**
 	 * Stop the timer.
@@ -59,7 +63,7 @@ class Timer {
 		if (this.handle) {
 			clearInterval(this.handle);
 		}
-	};
+	}
 
 	/**
 	 * Dispose the timer.
@@ -69,7 +73,7 @@ class Timer {
 			clearInterval(this.handle);
 		}
 	}
-};
+}
 
 export class PhpcsStatus {
 

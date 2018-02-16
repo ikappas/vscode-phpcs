@@ -5,13 +5,20 @@
 "use strict";
 
 import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection,
-	TextDocuments, TextDocument,
-	TextDocumentIdentifier, TextDocumentChangeEvent,
-	InitializeParams, InitializeResult,
-	DidChangeConfigurationParams, DidChangeWatchedFilesParams,
-	PublishDiagnosticsParams, Files,
+	createConnection,
+	DidChangeConfigurationParams,
+	DidChangeWatchedFilesParams,
+	Files,
+	IConnection,
+	InitializeParams,
+	InitializeResult,
+	IPCMessageReader,
+	IPCMessageWriter,
+	PublishDiagnosticsParams,
+	TextDocument,
+	TextDocumentChangeEvent,
+	TextDocumentIdentifier,
+	TextDocuments,
 } from 'vscode-languageserver';
 
 import * as path from 'path';

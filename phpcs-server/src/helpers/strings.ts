@@ -6,7 +6,6 @@
 
 export class StringResources {
 
-
 	static readonly DidStartValidateTextDocument: string = 'Linting started on: {0}';
 	static readonly DidEndValidateTextDocument: string = 'Linting completed on: {0}';
 
@@ -15,7 +14,7 @@ export class StringResources {
 	static readonly InvalidVersionStringError: string = 'Invalid version string encountered!';
 	static readonly UnknownErrorWhileValidatingTextDocument: string = 'An unknown error occurred while validating: {0}';
 
-	static readonly CreateLinterErrorDefaultMessage: string = 'Please add phpcs to your global path or use composer dependency manager to install it in your project locally.'
+	static readonly CreateLinterErrorDefaultMessage: string = 'Please add phpcs to your global path or use composer dependency manager to install it in your project locally.';
 	static readonly CreateLinterError: string = 'Unable to locate phpcs. {0}';
 
 	static readonly UnknownExecutionError: string = 'Unknown error ocurred. Please verify that {0} returns a valid json object.';
@@ -35,5 +34,5 @@ export class StringResources {
 				match :
 				args[idx];
 		});
-	};
+	}
 }

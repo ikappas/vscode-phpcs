@@ -5,7 +5,10 @@
 "use strict";
 
 import {
-	TextDocument, Diagnostic, DiagnosticSeverity, Files
+	Diagnostic,
+	DiagnosticSeverity,
+	Files,
+	TextDocument
 } from "vscode-languageserver";
 
 import cp = require("child_process");
@@ -136,7 +139,7 @@ class ComposerPhpcsPathResolver extends BasePhpcsPathResolver {
 			let match = pkgs.filter((pkg: any) => {
 				return pkg.name === "squizlabs/php_codesniffer";
 			});
-			return match.length !== 0
+			return match.length !== 0;
 		});
 	}
 
@@ -235,7 +238,7 @@ function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources
 		}
 	} else if (cc.isAlphaNumeric(charCode) || cc.isSymbol(charCode)) {
 		// Get the whole word
-		for (var i = start + 1, len = lineString.length; i < len; i++) {
+		for (let i = start + 1, len = lineString.length; i < len; i++) {
 			charCode = lineString.charCodeAt(i);
 			if (!cc.isAlphaNumeric(charCode) && charCode !== 95) {
 				break;
@@ -243,7 +246,7 @@ function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources
 			end += 1;
 		}
 		// Move backwards
-		for (var i = start, len = 0; i >  len; i--) {
+		for (let i = start, len = 0; i >  len; i--) {
 			charCode = lineString.charCodeAt(i - 1);
 			if (!cc.isAlphaNumeric(charCode) && !cc.isSymbol(charCode) && charCode !== 95) {
 				break;
@@ -270,7 +273,7 @@ function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources
 	}
 
 	return Diagnostic.create( range, message, severity, null, 'phpcs' );
-};
+}
 
 export class PhpcsLinter {
 

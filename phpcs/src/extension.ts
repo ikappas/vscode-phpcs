@@ -8,8 +8,18 @@ import * as path from "path";
 import * as proto from "./protocol";
 import { PhpcsStatus } from "./status";
 
-import { workspace, ExtensionContext } from "vscode";
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from "vscode-languageclient";
+import {
+	workspace,
+	ExtensionContext
+} from "vscode";
+
+import {
+	LanguageClient,
+	LanguageClientOptions,
+	ServerOptions,
+	SettingMonitor,
+	TransportKind
+} from "vscode-languageclient";
 
 export function activate(context: ExtensionContext) {
 
