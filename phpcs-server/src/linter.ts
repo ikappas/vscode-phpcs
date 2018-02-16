@@ -8,6 +8,7 @@ import {
 	Diagnostic,
 	DiagnosticSeverity,
 	Files,
+	Range,
 	TextDocument
 } from "vscode-languageserver";
 
@@ -22,63 +23,6 @@ import os = require("os");
 import { StringResources as SR } from "./helpers/strings";
 import { PhpcsSettings } from "./settings";
 import { PhpcsMessage } from "./message";
-
-function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources: boolean): Diagnostic {
-
-	let lines = document.getText().split("\n");
-	let line = entry.line - 1;
-	let lineString = lines[line];
-
-	// Process diagnostic start and end columns.
-	let start = entry.column - 1;
-	let end = entry.column;
-	let charCode = lineString.charCodeAt(start);
-	if (cc.isWhitespace(charCode)) {
-		for (var i = start + 1, len = lineString.length; i < len; i++) {
-			charCode = lineString.charCodeAt(i);
-			if (!cc.isWhitespace(charCode)) {
-				break;
-			}
-			end = i;
-		}
-	} else if (cc.isAlphaNumeric(charCode) || cc.isSymbol(charCode)) {
-		// Get the whole word
-		for (let i = start + 1, len = lineString.length; i < len; i++) {
-			charCode = lineString.charCodeAt(i);
-			if (!cc.isAlphaNumeric(charCode) && charCode !== 95) {
-				break;
-			}
-			end += 1;
-		}
-		// Move backwards
-		for (let i = start, len = 0; i >  len; i--) {
-			charCode = lineString.charCodeAt(i - 1);
-			if (!cc.isAlphaNumeric(charCode) && !cc.isSymbol(charCode) && charCode !== 95) {
-				break;
-			}
-			start -= 1;
-		}
-	}
-
-	let range = {
-		start: { line, character: start },
-		end: { line, character: end }
-	};
-
-	// Process diagnostic severity.
-	let severity: DiagnosticSeverity = DiagnosticSeverity.Error;
-	if (entry.type === "WARNING") {
-		severity = DiagnosticSeverity.Warning;
-	}
-
-	// Process diagnostic sources.
-	let message: string = entry.message;
-	if (showSources) {
-		message += `\n(${ entry.source })`;
-	}
-
-	return Diagnostic.create( range, message, severity, null, 'phpcs' );
-}
 
 export class PhpcsLinter {
 
@@ -238,9 +182,7 @@ export class PhpcsLinter {
 			throw new Error(error);
 		}
 
-		let diagnostics: Diagnostic[] = [];
 		let data = JSON.parse(stdout);
-
 		let messages: Array<PhpcsMessage>;
 		if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
 			const fileRealPath = fs.realpathSync(filePath);
@@ -256,10 +198,66 @@ export class PhpcsLinter {
 			({ messages } = data.files.STDIN);
 		}
 
-		messages.map((message) => {
-			diagnostics.push(makeDiagnostic(document, message, settings.showSources));
-		});
+		let diagnostics: Diagnostic[] = [];
+		messages.map(message => diagnostics.push(
+			this.createDiagnostic(document, message, settings.showSources)
+		));
 
 		return diagnostics;
+	}
+
+	private createDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources: boolean): Diagnostic {
+
+		let lines = document.getText().split("\n");
+		let line = entry.line - 1;
+		let lineString = lines[line];
+
+		// Process diagnostic start and end characters.
+		let startCharacter = entry.column - 1;
+		let endCharacter = entry.column;
+		let charCode = lineString.charCodeAt(startCharacter);
+		if (cc.isWhitespace(charCode)) {
+			for (let i = startCharacter + 1, len = lineString.length; i < len; i++) {
+				charCode = lineString.charCodeAt(i);
+				if (!cc.isWhitespace(charCode)) {
+					break;
+				}
+				endCharacter = i;
+			}
+		} else if (cc.isAlphaNumeric(charCode) || cc.isSymbol(charCode)) {
+			// Get the whole word
+			for (let i = startCharacter + 1, len = lineString.length; i < len; i++) {
+				charCode = lineString.charCodeAt(i);
+				if (!cc.isAlphaNumeric(charCode) && charCode !== 95) {
+					break;
+				}
+				endCharacter++;
+			}
+			// Move backwards
+			for (let i = startCharacter, len = 0; i > len; i--) {
+				charCode = lineString.charCodeAt(i - 1);
+				if (!cc.isAlphaNumeric(charCode) && !cc.isSymbol(charCode) && charCode !== 95) {
+					break;
+				}
+				startCharacter++;
+			}
+		}
+
+		// Process diagnostic range.
+		const range: Range = Range.create(line, startCharacter, line, endCharacter);
+
+		// Process diagnostic sources.
+		let message: string = entry.message;
+		if (showSources) {
+			message += `\n(${entry.source})`;
+		}
+
+		// Process diagnostic severity.
+		let severity: DiagnosticSeverity = DiagnosticSeverity.Error;
+		if (entry.type === "WARNING") {
+			severity = DiagnosticSeverity.Warning;
+		}
+
+		return Diagnostic.create(range, message, severity, null, 'phpcs');
 	}
 }
