@@ -5,13 +5,10 @@
 "use strict";
 
 import {
-	TextDocumentIdentifier, TextDocumentChangeEvent
-} from 'vscode-languageserver-types';
-
-import {
 	IPCMessageReader, IPCMessageWriter,
 	createConnection, IConnection,
 	TextDocuments, TextDocument,
+	TextDocumentIdentifier, TextDocumentChangeEvent,
 	InitializeParams, InitializeResult,
 	DidChangeConfigurationParams, DidChangeWatchedFilesParams,
 	PublishDiagnosticsParams, Files,

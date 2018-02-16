@@ -18,9 +18,9 @@
   },
   "dependencies": {
     "vscode-languageserver": "^3.5.0",
-    "cross-spawn": "^5.1.0",
+    "cross-spawn": "^6.0.4",
     "minimatch": "^3.0.4",
-    "semver": "^5.4.1"
+    "semver": "^5.5.0"
   },
   "scripts": {
     "installServer": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json",
