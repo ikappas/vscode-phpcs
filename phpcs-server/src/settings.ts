@@ -9,7 +9,7 @@ export interface PhpcsSettings {
 	workspaceRoot: string | null;
 	executablePath: string | null;
 	composerJsonPath: string | null;
-	standard: string;
+	standard: string | null;
 	showSources: boolean;
 	showWarnings: boolean;
 	ignorePatterns: string[];
