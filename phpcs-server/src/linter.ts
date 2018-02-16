@@ -21,16 +21,7 @@ import spawn = require("cross-spawn");
 import os = require("os");
 import { StringResources as SR } from "./helpers/strings";
 import { PhpcsSettings } from "./settings";
-
-interface PhpcsMessage {
-	message: string;
-	severity: number;
-	type: string;
-	line: number;
-	column: number;
-	fixable: boolean;
-	source?: string;
-}
+import { PhpcsMessage } from "./message";
 
 function makeDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources: boolean): Diagnostic {
 
