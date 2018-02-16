@@ -12,28 +12,26 @@ export class Timer {
 	public interval = 1000;
 
 	/**
-	 * The function to execute on tick.
-	 *
-	 * @var Function
+	 * The function to execute on set interval.
 	 */
-	private tick: Function;
+	private tick: (...args: any[]) => void;
 
 	/**
 	 * A boolean flag indicating whether the timer is enabled.
-	 *
-	 * @var boolean
 	 */
 	private enable: boolean = false;
 
-	// Member variable: Hold interval id of the timer
+	/**
+	 * A Number, representing the ID value of the timer that is set.
+	 * Use this value with the clearInterval() method to cancel the timer
+	 */
 	private handle: NodeJS.Timer;
 
 	/**
 	 * Class constructor.
-	 *
-	 * @return self.
+	 * @param tick The function to execute on set interval.
 	 */
-	constructor(tick: Function) {
+	constructor(tick: (...args: any[]) => void) {
 		this.tick = tick;
 	}
 
@@ -43,9 +41,7 @@ export class Timer {
 	public start(): void {
 		this.enable = true;
 		if (this.enable) {
-			this.handle = setInterval(() => {
-				this.tick();
-			}, this.interval);
+			this.handle = setInterval(this.tick, this.interval);
 		}
 	}
 
