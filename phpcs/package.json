@@ -41,6 +41,7 @@
           "description": "Control whether phpcs is enabled for PHP files or not."
         },
         "phpcs.executablePath": {
+          "scope": "resource",
           "type": "string",
           "default": null,
           "description": "Optional. The path to the phpcs executable."
