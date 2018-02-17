@@ -23,16 +23,4 @@ export class StringResources {
 	static readonly Empty: string = '';
 	static readonly Space: string = ' ';
 
-	private static readonly FormatRegExp = /{(\d+)}/g;
-	static format(value: string, ...args: any[]): string {
-		if (args.length === 0) {
-			return value;
-		}
-		return value.replace(StringResources.FormatRegExp, function (match, group) {
-			let idx = parseInt(group, 10);
-			return isNaN(idx) || idx < 0 || idx >= args.length ?
-				match :
-				args[idx];
-		});
-	}
 }
