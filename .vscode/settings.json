@@ -11,15 +11,18 @@
 	"editor.insertSpaces": false,
 	"editor.tabSize": 4,
 	"cSpell.words": [
-		"charcode",
-		"codesniffer",
 		"Composer",
-		"comspec",
 		"Drupal",
-		"gitignore",
-		"ikappas",
 		"Ioannis",
 		"Kappas",
+		"Squiz",
+		"WordPress",
+		"Zend",
+		"charcode",
+		"codesniffer",
+		"comspec",
+		"gitignore",
+		"ikappas",
 		"languageclient",
 		"languageserver",
 		"lockfile",
@@ -27,11 +30,9 @@
 		"pkg",
 		"pkgs",
 		"quickstart",
+		"rtrim",
 		"ruleset",
-		"Squiz",
 		"squizlabs",
-		"testrunner",
-		"WordPress",
-		"Zend"
+		"testrunner"
 	]
 }
