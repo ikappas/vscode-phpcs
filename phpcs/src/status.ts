@@ -18,7 +18,7 @@ export class PhpcsStatus {
 	private documents: string[] = [];
 	private processing: number = 0;
 	private spinnerIndex = 0;
-	private spinnerSequence: string[] = [ "|", "/", "-", "\\" ];
+	private spinnerSequence: string[] = ["|", "/", "-", "\\"];
 	private timer: Timer;
 
 	public startProcessing(uri: string) {
@@ -41,7 +41,7 @@ export class PhpcsStatus {
 		}
 	}
 
-	private updateStatusText() : void{
+	private updateStatusText(): void {
 		let statusBar = this.getStatusBarItem();
 		let count = this.processing;
 		if (count > 0) {
@@ -54,7 +54,7 @@ export class PhpcsStatus {
 
 	private getNextSpinnerChar(): string {
 		let spinnerChar = this.spinnerSequence[this.spinnerIndex];
-		this.spinnerIndex +=  1;
+		this.spinnerIndex += 1;
 		if (this.spinnerIndex > this.spinnerSequence.length - 1) {
 			this.spinnerIndex = 0;
 		}
@@ -63,7 +63,7 @@ export class PhpcsStatus {
 
 	private getTimer(): Timer {
 		if (!this.timer) {
-			this.timer = new Timer(()=>{
+			this.timer = new Timer(() => {
 				this.updateStatusText();
 			});
 			this.timer.interval = 100;

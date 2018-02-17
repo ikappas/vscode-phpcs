@@ -4,12 +4,12 @@
  * ------------------------------------------------------------------------------------------ */
 "use strict";
 
-export function isWhitespace(charCode: number) : boolean {
+export function isWhitespace(charCode: number): boolean {
 	return (charCode >= 9 && charCode <= 13) || // HT, LF, VT, CR
-			charCode === 32; // space
+		charCode === 32; // space
 }
 
-export function isAlphaNumeric(charCode: number) : boolean {
+export function isAlphaNumeric(charCode: number): boolean {
 	if (!(charCode > 47 && charCode < 58) && // numeric (0-9)
 		!(charCode > 64 && charCode < 91) && // upper alpha (A-Z)
 		!(charCode > 96 && charCode < 123)) { // lower alpha (a-z)
@@ -18,7 +18,7 @@ export function isAlphaNumeric(charCode: number) : boolean {
 	return true;
 }
 
-export function isSymbol(charCode: number) : boolean {
+export function isSymbol(charCode: number): boolean {
 	return charCode === 36 || // $
-		   charCode === 64;   // @
+		charCode === 64;   // @
 }

@@ -24,6 +24,7 @@
     "@types/node": "^8.9.4",
     "@types/semver": "^5.5.0",
     "tslint": "^5.9.1",
-    "typescript": "^2.7.2"
+    "typescript": "^2.7.2",
+    "typescript-formatter": "^7.0.1"
   }
 }

@@ -149,7 +149,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private async onDidOpenDocument({ document }: TextDocumentChangeEvent ): Promise<void> {
+	private async onDidOpenDocument({ document }: TextDocumentChangeEvent): Promise<void> {
 		await this.validateSingle(document);
 	}
 
@@ -159,7 +159,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private async onDidSaveDocument({ document }: TextDocumentChangeEvent ): Promise<void> {
+	private async onDidSaveDocument({ document }: TextDocumentChangeEvent): Promise<void> {
 		await this.validateSingle(document);
 	}
 
@@ -169,7 +169,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private async onDidCloseDocument({ document }: TextDocumentChangeEvent ): Promise<void> {
+	private async onDidCloseDocument({ document }: TextDocumentChangeEvent): Promise<void> {
 		const uri = document.uri;
 
 		// Clear cached document settings.
@@ -182,7 +182,7 @@ class PhpcsServer {
 			this.validating.delete(uri);
 		}
 
-  		this.clearDiagnostics(uri);
+		this.clearDiagnostics(uri);
 	}
 
 	/**
@@ -191,7 +191,7 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private async onDidChangeDocument({ document }: TextDocumentChangeEvent ): Promise<void> {
+	private async onDidChangeDocument({ document }: TextDocumentChangeEvent): Promise<void> {
 		await this.validateSingle(document);
 	}
 
@@ -232,7 +232,7 @@ class PhpcsServer {
 		this.validating.set(document.uri, document);
 		this.connection.sendNotification(
 			proto.DidStartValidateTextDocumentNotification.type,
-			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
+			{ textDocument: TextDocumentIdentifier.create(document.uri) }
 		);
 		this.connection.tracer.log(SR.format(SR.DidStartValidateTextDocument, document.uri));
 	}
@@ -246,7 +246,7 @@ class PhpcsServer {
 		this.validating.delete(document.uri);
 		this.connection.sendNotification(
 			proto.DidEndValidateTextDocumentNotification.type,
-			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
+			{ textDocument: TextDocumentIdentifier.create(document.uri) }
 		);
 		this.connection.tracer.log(SR.format(SR.DidEndValidateTextDocument, document.uri));
 	}
