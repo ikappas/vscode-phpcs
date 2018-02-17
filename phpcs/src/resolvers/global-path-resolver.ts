@@ -6,6 +6,7 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+
 import { PhpcsPathResolverBase } from './path-resolver-base';
 
 export class GlobalPhpcsPathResolver extends PhpcsPathResolverBase {

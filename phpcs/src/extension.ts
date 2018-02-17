@@ -6,8 +6,6 @@
 
 import * as path from "path";
 import * as proto from "./protocol";
-import { PhpcsStatus } from "./status";
-import { PhpcsConfiguration } from "./configuration";
 
 import {
 	CancellationToken,
@@ -24,6 +22,9 @@ import {
 	ServerOptions,
 	TransportKind
 } from "vscode-languageclient";
+
+import { PhpcsStatus } from "./status";
+import { PhpcsConfiguration } from "./configuration";
 
 export function activate(context: ExtensionContext) {
 

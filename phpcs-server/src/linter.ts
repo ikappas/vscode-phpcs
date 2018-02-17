@@ -4,6 +4,15 @@
  * ------------------------------------------------------------------------------------------ */
 "use strict";
 
+import * as cc from "./helpers/charcode";
+import * as cp from "child_process";
+import * as fs from "fs";
+import * as minimatch from "minimatch";
+import * as os from "os";
+import * as path from "path";
+import * as semver from "semver";
+import * as spawn from "cross-spawn";
+
 import {
 	Diagnostic,
 	DiagnosticSeverity,
@@ -12,14 +21,6 @@ import {
 	TextDocument
 } from "vscode-languageserver";
 
-import cp = require("child_process");
-import path = require("path");
-import fs = require("fs");
-import cc = require("./helpers/charcode");
-import minimatch = require("minimatch");
-import semver = require("semver");
-import spawn = require("cross-spawn");
-import os = require("os");
 import { StringResources as SR } from "./helpers/strings";
 import { PhpcsSettings } from "./settings";
 import { PhpcsMessage } from "./message";

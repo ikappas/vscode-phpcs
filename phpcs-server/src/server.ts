@@ -4,6 +4,8 @@
  * ------------------------------------------------------------------------------------------ */
 "use strict";
 
+import * as proto from "./protocol";
+
 import {
 	ClientCapabilities,
 	createConnection,
@@ -24,7 +26,6 @@ import {
 	TextDocuments
 } from 'vscode-languageserver';
 
-import * as proto from "./protocol";
 import { PhpcsLinter } from "./linter";
 import { PhpcsSettings } from "./settings";
 import { StringResources as SR } from "./helpers/strings";

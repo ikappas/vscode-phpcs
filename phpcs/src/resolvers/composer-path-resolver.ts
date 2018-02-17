@@ -6,6 +6,7 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+
 import { PhpcsPathResolverBase } from './path-resolver-base';
 
 export class ComposerPhpcsPathResolver extends PhpcsPathResolverBase {
@@ -102,7 +103,7 @@ export class ComposerPhpcsPathResolver extends PhpcsPathResolverBase {
 			let match = pkgs.filter((pkg: any) => {
 				return pkg.name === "squizlabs/php_codesniffer";
 			});
-			return match.length !== 0
+			return match.length !== 0;
 		});
 	}
 
