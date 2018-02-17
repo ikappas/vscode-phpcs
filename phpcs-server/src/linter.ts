@@ -240,7 +240,7 @@ export class PhpcsLinter {
 				if (!cc.isAlphaNumeric(charCode) && !cc.isSymbol(charCode) && charCode !== 95) {
 					break;
 				}
-				startCharacter++;
+				startCharacter--;
 			}
 		}
 
