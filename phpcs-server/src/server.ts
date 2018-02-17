@@ -5,11 +5,13 @@
 "use strict";
 
 import {
+	ClientCapabilities,
 	createConnection,
 	DidChangeConfigurationParams,
 	DidChangeWatchedFilesParams,
 	Files,
 	IConnection,
+	InitializeParams,
 	InitializeResult,
 	IPCMessageReader,
 	IPCMessageWriter,
@@ -90,19 +92,10 @@ class PhpcsServer {
 	 * @param params The initialization parameters.
 	 * @return A promise of initialization result or initialization error.
 	 */
-	private async onInitialize(params: any): Promise<InitializeResult> {
-		let capabilities = params.capabilities;
-
-		// Does the client support the `workspace/configuration` request?
-		// If not, we will fall back using global settings
-		this.hasWorkspaceFolderCapability = (capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace && !!(capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace.workspaceFolders;
-		this.hasConfigurationCapability = (capabilities as Proposed.ConfigurationClientCapabilities).workspace && !!(capabilities as Proposed.ConfigurationClientCapabilities).workspace.configuration;
-
-		if (this.hasWorkspaceFolderCapability) {
-			let folders = (params as Proposed.WorkspaceFoldersInitializeParams).workspaceFolders;
-			this.connection.tracer.log(SR.format("Initialize Folders: {0}", folders.map(f => { return f.name; }).join()));
-		}
-
+	private async onInitialize(params: InitializeParams & Proposed.WorkspaceFoldersInitializeParams): Promise<InitializeResult> {
+		let capabilities = params.capabilities as ClientCapabilities & Proposed.WorkspaceFoldersClientCapabilities & Proposed.ConfigurationClientCapabilities;
+		this.hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
+		this.hasConfigurationCapability = capabilities.workspace && !!capabilities.workspace.configuration;
 		return Promise.resolve<InitializeResult>({
 			capabilities: {
 				textDocumentSync: this.documents.syncKind
@@ -129,10 +122,12 @@ class PhpcsServer {
 	 */
 	private async onDidChangeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
 		if (this.hasConfigurationCapability) {
-			// Reset all cached document settings
 			this.documentSettings.clear();
 		} else {
-			this.globalSettings = params.settings.phpcs as PhpcsSettings || this.defaultSettings;
+			this.globalSettings = {
+				...this.defaultSettings,
+				...params.settings.phpcs
+			};
 		}
 		await this.validateMany(this.documents.all());
 	}
@@ -153,8 +148,8 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private async onDidOpenDocument(event: TextDocumentChangeEvent ): Promise<void> {
-		await this.validateSingle(event.document);
+	private async onDidOpenDocument({ document }: TextDocumentChangeEvent ): Promise<void> {
+		await this.validateSingle(document);
 	}
 
 	/**
@@ -163,8 +158,8 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private async onDidSaveDocument(event: TextDocumentChangeEvent ): Promise<void> {
-		await this.validateSingle(event.document);
+	private async onDidSaveDocument({ document }: TextDocumentChangeEvent ): Promise<void> {
+		await this.validateSingle(document);
 	}
 
 	/**
@@ -173,8 +168,8 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private async onDidCloseDocument(event: TextDocumentChangeEvent ): Promise<void> {
-		const uri = event.document.uri;
+	private async onDidCloseDocument({ document }: TextDocumentChangeEvent ): Promise<void> {
+		const uri = document.uri;
 
 		// Clear cached document settings.
 		if (this.documentSettings.has(uri)) {
@@ -186,7 +181,7 @@ class PhpcsServer {
 			this.validating.delete(uri);
 		}
 
-  		this.connection.sendDiagnostics({ uri, diagnostics: [] });
+  		this.clearDiagnostics(uri);
 	}
 
 	/**
@@ -195,8 +190,8 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private async onDidChangeDocument(event: TextDocumentChangeEvent ): Promise<void> {
-		await this.validateSingle(event.document);
+	private async onDidChangeDocument({ document }: TextDocumentChangeEvent ): Promise<void> {
+		await this.validateSingle(document);
 	}
 
 	/**
@@ -216,6 +211,15 @@ class PhpcsServer {
 	 */
 	private sendDiagnostics(params: PublishDiagnosticsParams): void {
 		this.connection.sendDiagnostics(params);
+	}
+
+	/**
+	 * Clears the diagnostics computed for a given document.
+	 *
+	 * @param uri The document uri for which to clear the diagnostics.
+	 */
+	private clearDiagnostics(uri: string): void {
+		this.connection.sendDiagnostics({ uri, diagnostics: [] });
 	}
 
 	/**
