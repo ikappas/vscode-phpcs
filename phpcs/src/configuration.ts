@@ -37,7 +37,7 @@ export class PhpcsConfiguration extends Disposable {
 	 */
 	public constructor(client: LanguageClient) {
 		super(() => {
-			this.disposables.map(o =>{ o.dispose(); });
+			this.disposables.map(o => { o.dispose(); });
 			this.client = null;
 		});
 

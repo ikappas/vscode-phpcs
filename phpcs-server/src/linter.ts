@@ -53,7 +53,7 @@ export class PhpcsLinter {
 			const executableVersion = versionMatches[1];
 			return new PhpcsLinter(executablePath, executableVersion);
 
-		} catch(error) {
+		} catch (error) {
 			let message = error.message ? error.message : SR.CreateLinterErrorDefaultMessage;
 			throw new Error(SR.format(SR.CreateLinterError, message));
 		}
@@ -79,7 +79,7 @@ export class PhpcsLinter {
 		}
 
 		// Process linting arguments.
-		let lintArgs = [ '--report=json' ];
+		let lintArgs = ['--report=json'];
 
 		// -q (quiet) option is available since phpcs 2.6.2
 		if (semver.gte(this.executableVersion, '2.6.2')) {

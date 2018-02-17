@@ -40,7 +40,7 @@ export function activate(context: ExtensionContext) {
 	// If the extension is launch in debug mode the debug server options are use
 	// Otherwise the run options are used
 	let serverOptions: ServerOptions = {
-		run : { module: serverModule, transport: TransportKind.ipc },
+		run: { module: serverModule, transport: TransportKind.ipc },
 		debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
 	};
 
