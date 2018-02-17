@@ -12,6 +12,7 @@ import * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
 import * as spawn from "cross-spawn";
+import * as strings from "base/common/strings";
 
 import {
 	Diagnostic,
@@ -55,7 +56,7 @@ export class PhpcsLinter {
 
 		} catch (error) {
 			let message = error.message ? error.message : SR.CreateLinterErrorDefaultMessage;
-			throw new Error(SR.format(SR.CreateLinterError, message));
+			throw new Error(strings.format(SR.CreateLinterError, message));
 		}
 	}
 
@@ -171,14 +172,14 @@ export class PhpcsLinter {
 				}
 				throw new Error(error);
 			}
-			throw new Error(SR.format(SR.UnknownExecutionError, `${this.executablePath} ${lintArgs.join(' ')}`));
+			throw new Error(strings.format(SR.UnknownExecutionError, `${this.executablePath} ${lintArgs.join(' ')}`));
 		}
 
 		// Determine whether we have an error in stdout.
 		if (match = stdout.match(/^ERROR:\s?(.*)/i)) {
 			let error = match[1].trim();
 			if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
-				throw new Error(SR.format(SR.CodingStandardNotInstalledError, match[1]));
+				throw new Error(strings.format(SR.CodingStandardNotInstalledError, match[1]));
 			}
 			throw new Error(error);
 		}
