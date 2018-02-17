@@ -6,7 +6,7 @@
 
 import * as cc from "./helpers/charcode";
 import * as cp from "child_process";
-import * as fs from "fs";
+import * as extfs from "base/node/extfs";
 import * as minimatch from "minimatch";
 import * as os from "os";
 import * as path from "path";
@@ -187,7 +187,7 @@ export class PhpcsLinter {
 		let data = JSON.parse(stdout);
 		let messages: Array<PhpcsMessage>;
 		if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
-			const fileRealPath = fs.realpathSync(filePath);
+			const fileRealPath = extfs.realpathSync(filePath);
 			if (!data.files[fileRealPath]) {
 				return [];
 			}
