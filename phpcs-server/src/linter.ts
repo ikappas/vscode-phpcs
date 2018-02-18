@@ -3,8 +3,6 @@
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 "use strict";
-
-import * as cc from "./helpers/charcode";
 import * as cp from "child_process";
 import * as extfs from "base/node/extfs";
 import * as minimatch from "minimatch";
@@ -13,6 +11,7 @@ import * as path from "path";
 import * as semver from "semver";
 import * as spawn from "cross-spawn";
 import * as strings from "base/common/strings";
+import CharCode from "base/common/charcode";
 
 import {
 	Diagnostic,
@@ -218,19 +217,19 @@ export class PhpcsLinter {
 		let startCharacter = entry.column - 1;
 		let endCharacter = entry.column;
 		let charCode = lineString.charCodeAt(startCharacter);
-		if (cc.isWhitespace(charCode)) {
+		if (CharCode.isWhiteSpace(charCode)) {
 			for (let i = startCharacter + 1, len = lineString.length; i < len; i++) {
 				charCode = lineString.charCodeAt(i);
-				if (!cc.isWhitespace(charCode)) {
+				if (!CharCode.isWhiteSpace(charCode)) {
 					break;
 				}
 				endCharacter = i;
 			}
-		} else if (cc.isAlphaNumeric(charCode) || cc.isSymbol(charCode)) {
+		} else if (CharCode.isAlphaNumeric(charCode) || CharCode.isSymbol(charCode)) {
 			// Get the whole word
 			for (let i = startCharacter + 1, len = lineString.length; i < len; i++) {
 				charCode = lineString.charCodeAt(i);
-				if (!cc.isAlphaNumeric(charCode) && charCode !== 95) {
+				if (!CharCode.isAlphaNumeric(charCode) && charCode !== 95) {
 					break;
 				}
 				endCharacter++;
@@ -238,7 +237,7 @@ export class PhpcsLinter {
 			// Move backwards
 			for (let i = startCharacter, len = 0; i > len; i--) {
 				charCode = lineString.charCodeAt(i - 1);
-				if (!cc.isAlphaNumeric(charCode) && !cc.isSymbol(charCode) && charCode !== 95) {
+				if (!CharCode.isAlphaNumeric(charCode) && !CharCode.isSymbol(charCode) && charCode !== 95) {
 					break;
 				}
 				startCharacter--;
