@@ -5,6 +5,7 @@
 "use strict";
 
 import * as proto from "./protocol";
+import * as strings from "base/common/strings";
 
 import {
 	ClientCapabilities,
@@ -28,7 +29,7 @@ import {
 
 import { PhpcsLinter } from "./linter";
 import { PhpcsSettings } from "./settings";
-import { StringResources as SR } from "./helpers/strings";
+import { StringResources as SR } from "./strings";
 
 class PhpcsServer {
 
@@ -234,7 +235,7 @@ class PhpcsServer {
 			proto.DidStartValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create(document.uri) }
 		);
-		this.connection.tracer.log(SR.format(SR.DidStartValidateTextDocument, document.uri));
+		this.connection.tracer.log(strings.format(SR.DidStartValidateTextDocument, document.uri));
 	}
 
 	/**
@@ -248,7 +249,7 @@ class PhpcsServer {
 			proto.DidEndValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create(document.uri) }
 		);
-		this.connection.tracer.log(SR.format(SR.DidEndValidateTextDocument, document.uri));
+		this.connection.tracer.log(strings.format(SR.DidEndValidateTextDocument, document.uri));
 	}
 
 	/**
@@ -326,7 +327,7 @@ class PhpcsServer {
 				message = message.substr(5);
 			}
 		} else {
-			message = SR.format(SR.UnknownErrorWhileValidatingTextDocument, Files.uriToFilePath(document.uri));
+			message = strings.format(SR.UnknownErrorWhileValidatingTextDocument, Files.uriToFilePath(document.uri));
 		}
 		return message;
 	}

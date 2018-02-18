@@ -3,15 +3,15 @@
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 "use strict";
-
-import * as cc from "./helpers/charcode";
 import * as cp from "child_process";
-import * as fs from "fs";
+import * as extfs from "base/node/extfs";
 import * as minimatch from "minimatch";
 import * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
 import * as spawn from "cross-spawn";
+import * as strings from "base/common/strings";
+import CharCode from "base/common/charcode";
 
 import {
 	Diagnostic,
@@ -21,7 +21,7 @@ import {
 	TextDocument
 } from "vscode-languageserver";
 
-import { StringResources as SR } from "./helpers/strings";
+import { StringResources as SR } from "./strings";
 import { PhpcsSettings } from "./settings";
 import { PhpcsMessage } from "./message";
 
@@ -55,7 +55,7 @@ export class PhpcsLinter {
 
 		} catch (error) {
 			let message = error.message ? error.message : SR.CreateLinterErrorDefaultMessage;
-			throw new Error(SR.format(SR.CreateLinterError, message));
+			throw new Error(strings.format(SR.CreateLinterError, message));
 		}
 	}
 
@@ -171,14 +171,14 @@ export class PhpcsLinter {
 				}
 				throw new Error(error);
 			}
-			throw new Error(SR.format(SR.UnknownExecutionError, `${this.executablePath} ${lintArgs.join(' ')}`));
+			throw new Error(strings.format(SR.UnknownExecutionError, `${this.executablePath} ${lintArgs.join(' ')}`));
 		}
 
 		// Determine whether we have an error in stdout.
 		if (match = stdout.match(/^ERROR:\s?(.*)/i)) {
 			let error = match[1].trim();
 			if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
-				throw new Error(SR.format(SR.CodingStandardNotInstalledError, match[1]));
+				throw new Error(strings.format(SR.CodingStandardNotInstalledError, match[1]));
 			}
 			throw new Error(error);
 		}
@@ -186,7 +186,7 @@ export class PhpcsLinter {
 		let data = JSON.parse(stdout);
 		let messages: Array<PhpcsMessage>;
 		if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
-			const fileRealPath = fs.realpathSync(filePath);
+			const fileRealPath = extfs.realpathSync(filePath);
 			if (!data.files[fileRealPath]) {
 				return [];
 			}
@@ -217,19 +217,19 @@ export class PhpcsLinter {
 		let startCharacter = entry.column - 1;
 		let endCharacter = entry.column;
 		let charCode = lineString.charCodeAt(startCharacter);
-		if (cc.isWhitespace(charCode)) {
+		if (CharCode.isWhiteSpace(charCode)) {
 			for (let i = startCharacter + 1, len = lineString.length; i < len; i++) {
 				charCode = lineString.charCodeAt(i);
-				if (!cc.isWhitespace(charCode)) {
+				if (!CharCode.isWhiteSpace(charCode)) {
 					break;
 				}
 				endCharacter = i;
 			}
-		} else if (cc.isAlphaNumeric(charCode) || cc.isSymbol(charCode)) {
+		} else if (CharCode.isAlphaNumeric(charCode) || CharCode.isSymbol(charCode)) {
 			// Get the whole word
 			for (let i = startCharacter + 1, len = lineString.length; i < len; i++) {
 				charCode = lineString.charCodeAt(i);
-				if (!cc.isAlphaNumeric(charCode) && charCode !== 95) {
+				if (!CharCode.isAlphaNumeric(charCode) && charCode !== 95) {
 					break;
 				}
 				endCharacter++;
@@ -237,7 +237,7 @@ export class PhpcsLinter {
 			// Move backwards
 			for (let i = startCharacter, len = 0; i > len; i--) {
 				charCode = lineString.charCodeAt(i - 1);
-				if (!cc.isAlphaNumeric(charCode) && !cc.isSymbol(charCode) && charCode !== 95) {
+				if (!CharCode.isAlphaNumeric(charCode) && !CharCode.isSymbol(charCode) && charCode !== 95) {
 					break;
 				}
 				startCharacter--;

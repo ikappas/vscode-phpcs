@@ -25,6 +25,7 @@
   "scripts": {
     "installServer": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json",
     "compile": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc -p .",
-    "watch": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc --watch -p ."
+    "watch": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc --watch -p .",
+    "test": "mocha -r ts-node/register --ui tdd --timeout 10000 test/**/*.test.ts"
   }
 }
