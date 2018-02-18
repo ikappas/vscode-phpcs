@@ -29,7 +29,7 @@ import {
 
 import { PhpcsLinter } from "./linter";
 import { PhpcsSettings } from "./settings";
-import { StringResources as SR } from "./helpers/strings";
+import { StringResources as SR } from "./strings";
 
 class PhpcsServer {
 

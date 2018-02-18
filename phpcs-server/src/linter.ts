@@ -21,7 +21,7 @@ import {
 	TextDocument
 } from "vscode-languageserver";
 
-import { StringResources as SR } from "./helpers/strings";
+import { StringResources as SR } from "./strings";
 import { PhpcsSettings } from "./settings";
 import { PhpcsMessage } from "./message";
 
