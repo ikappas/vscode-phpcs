@@ -96,8 +96,26 @@ export class PhpcsLinter {
 			lintArgs.push('--encoding=UTF-8');
 		}
 
-		if (settings.standard !== null) {
-			lintArgs.push(`--standard=${settings.standard}`);
+		// Check if a config file exists and handle it
+		let standard: string;
+		if (filePath !== undefined) {
+			const confFileNames = [
+				'.phpcs.xml', '.phpcs.xml.dist', 'phpcs.xml', 'phpcs.xml.dist',
+				'phpcs.ruleset.xml', 'ruleset.xml',
+			];
+
+			const fileDir = path.dirname(filePath);
+			const confFile = await extfs.findAsync(fileDir, confFileNames);
+
+			standard = settings.autoConfigSearch && confFile
+				? confFile
+				: settings.standard;
+		} else {
+			standard = settings.standard;
+		}
+
+		if (standard) {
+			lintArgs.push(`--standard=${standard}`);
 		}
 
 		// Check if file should be ignored (Skip for in-memory documents)

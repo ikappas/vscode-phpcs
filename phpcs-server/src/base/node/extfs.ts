@@ -29,3 +29,31 @@ export function realpathSync(path: string): string {
 function normalizePath(path: string): string {
 	return strings.rtrim(paths.normalize(path), paths.sep);
 }
+
+export async function findAsync(directory: string, name: string | Array<string>): Promise<string | null> {
+
+	if (typeof directory !== 'string') {
+		throw new Error('Invalid or no `directory` provided');
+	} else if (typeof name !== 'string' && !(name instanceof Array)) {
+		throw new Error('Invalid or no `name` provided');
+	}
+
+	const names = [].concat(name)
+	const chunks = directory.split(paths.sep);
+
+	while (chunks.length) {
+		let currentDir = chunks.join(paths.sep);
+		if (currentDir === '') {
+			currentDir = paths.resolve(directory, '/');
+		}
+		for (const fileName of names) {
+			const filePath = paths.join(currentDir, fileName);
+			if (fs.existsSync(filePath)) {
+				return filePath;
+			}
+		}
+		chunks.pop();
+	}
+
+	return null;
+}

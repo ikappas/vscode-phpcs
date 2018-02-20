@@ -61,6 +61,12 @@
           "default": null,
           "description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
         },
+        "phpcs.autoConfigSearch": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides custom standards defined above."
+        },
         "phpcs.ignorePatterns": {
           "scope": "resource",
           "type": "array",

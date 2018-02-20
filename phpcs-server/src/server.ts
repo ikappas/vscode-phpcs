@@ -48,6 +48,7 @@ class PhpcsServer {
 		executablePath: null,
 		composerJsonPath: null,
 		standard: null,
+		autoConfigSearch: true,
 		showSources: false,
 		showWarnings: true,
 		ignorePatterns: [],

@@ -164,6 +164,14 @@ The following values are applicable:
     }
     ```
 
+### **phpcs.autoConfigSearch**
+
+[ Optional | **Type:** `boolean` | **Default:** `true` ]
+
+Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides `phpcs.standard` configuration when a ruleset is found.
+
+> **NOTE:** This option does not apply for unsaved documents (in-memory).
+
 ### **phpcs.ignorePatterns**
 
 [ Optional | **Type:** `array` | **Default:** `[]` ]
