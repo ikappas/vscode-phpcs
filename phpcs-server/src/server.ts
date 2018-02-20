@@ -5,7 +5,7 @@
 "use strict";
 
 import * as proto from "./protocol";
-import * as strings from "base/common/strings";
+import * as strings from "./base/common/strings";
 
 import {
 	ClientCapabilities,

@@ -7,7 +7,7 @@
 
 import * as fs from "fs";
 import * as paths from "path";
-import * as strings from "base/common/strings";
+import * as strings from "../common/strings";
 
 export function realpathSync(path: string): string {
 	try {

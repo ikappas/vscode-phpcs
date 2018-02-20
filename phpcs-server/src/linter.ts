@@ -4,14 +4,14 @@
  * ------------------------------------------------------------------------------------------ */
 "use strict";
 import * as cp from "child_process";
-import * as extfs from "base/node/extfs";
+import * as extfs from "./base/node/extfs";
 import * as minimatch from "minimatch";
 import * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
 import * as spawn from "cross-spawn";
-import * as strings from "base/common/strings";
-import CharCode from "base/common/charcode";
+import * as strings from "./base/common/strings";
+import CharCode from "./base/common/charcode";
 
 import {
 	Diagnostic,

@@ -9,7 +9,6 @@
 		"moduleResolution": "node",
 		"sourceMap": true,
 		"lib": [ "es2016" ],
-		"baseUrl": "./src",
 		"outDir": "../phpcs/server"
 	},
 	"exclude": [

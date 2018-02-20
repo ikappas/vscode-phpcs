@@ -32,7 +32,7 @@ export function activate(context: ExtensionContext) {
 	let config: PhpcsConfiguration;
 
 	// The server is implemented in node
-	let serverModule = context.asAbsolutePath(path.join("server", "server.js"));
+	let serverModule = context.asAbsolutePath(path.join("server", "src", "server.js"));
 
 	// The debug options for the server
 	let debugOptions = { execArgv: ["--nolazy", "--inspect=6199"] };
