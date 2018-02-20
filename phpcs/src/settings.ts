@@ -10,6 +10,7 @@ export interface PhpcsSettings {
 	executablePath: string | null;
 	composerJsonPath: string | null;
 	standard: string | null;
+	autoConfigSearch: boolean;
 	showSources: boolean;
 	showWarnings: boolean;
 	ignorePatterns: string[];
