@@ -218,6 +218,8 @@ This setting allows you to override the path to your composer.json file when it 
 
 The extension architecture is based off of the [Language Server Node Example](https://github.com/Microsoft/vscode-languageserver-node-example).
 
+Additional inspiration comes from [Atom Linter-phpcs](https://github.com/AtomLinter/linter-phpcs).
+
 ## Contributing and Licensing
 
 The project is hosted on [GitHub](https://github.com/ikappas/vscode-phpcs) where you can [report issues](https://github.com/ikappas/vscode-phpcs/issues), fork
