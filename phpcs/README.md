@@ -27,8 +27,6 @@ The `phpcs` linter can be installed globally using the Composer Dependency Manag
     composer global require squizlabs/php_codesniffer
     ```
 
-    ```bash
-
 ### Project-wide Installation
 
 The `phpcs` linter can be installed in your project using the Composer Dependency Manager for PHP.
