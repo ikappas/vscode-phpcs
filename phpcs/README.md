@@ -74,6 +74,9 @@ This setting controls the coding standard used by `phpcs`. You may specify the n
 
 The following values are applicable:
 
+1. This setting can be set to `null`, which is the default behavior and uses the `default_standard` when set in the `phpcs` configuration or fallback to the `Pear` coding standard.
+
+    ```json
     {
         "phpcs.standard": null
     }
