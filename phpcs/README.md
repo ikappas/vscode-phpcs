@@ -50,24 +50,25 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 
 ## Basic Configuration
 
-There are various options that can be configured by making changes to your user or workspace preferences.
+There are various options that can be configured to control how the plugin operates which can be set
+in your user, workspace or folder preferences.
 
 ### **phpcs.enable**
 
-[ Optional | **Default**: `true` ]
+[ Scope: `All` | Optional | **Default**: `true` ]
 
 This setting controls whether `phpcs` linting is enabled.
 
 ### **phpcs.executablePath**
 
-[ Optional | **Default**: `null` ]
+[ Scope: `All` | Optional | **Default**: `null` ]
 
 This setting controls the executable path for the `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
 If omitted, the plugin will try to locate the path parsing your composer configuration or the global path.
 
 ### **phpcs.standard**
 
-[ Optional | **Default:** `null` ]
+[ Scope: `All` | Optional | **Default:** `null` ]
 
 This setting controls the coding standard used by `phpcs`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
 
@@ -154,7 +155,7 @@ The following values are applicable:
 
 ### **phpcs.autoConfigSearch**
 
-[ Optional | **Type:** `boolean` | **Default:** `true` ]
+[ Scope: `All` | Optional | **Type:** `boolean` | **Default:** `true` ]
 
 Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides `phpcs.standard` configuration when a ruleset is found.
 
@@ -162,7 +163,7 @@ Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` 
 
 ### **phpcs.ignorePatterns**
 
-[ Optional | **Type:** `array` | **Default:** `[]` ]
+[ Scope: `All` | Optional | **Type:** `array` | **Default:** `[]` ]
 
 An array of glob patterns to skip files and folders that match when linting your documents.
 
@@ -177,31 +178,31 @@ An array of glob patterns to skip files and folders that match when linting your
 
 ### **phpcs.errorSeverity**
 
-[ Optional | **Type:** `number` | **Default:** `5` ]
+[ Scope: `All` | Optional | **Type:** `number` | **Default:** `5` ]
 
 The minimum severity an error must have to be displayed. You may specify an integer value.
 
 ### **phpcs.warningSeverity**
 
-[ Optional | **Type:** `number` | **Default:** `5` ]
+[ Scope: `All` | Optional | **Type:** `number` | **Default:** `5` ]
 
 The minimum severity a warning must have to be displayed. You may specify an integer value.
 
 ### **phpcs.showWarnings**
 
-[ Optional | **Default**: `true` ]
+[ Scope: `All` | Optional | **Default**: `true` ]
 
 Control whether warnings are displayed.
 
 ### **phpcs.showSources**
 
-[ Optional | **Default**: `false` ]
+[ Scope: `All` | Optional | **Default**: `false` ]
 
 Show sniff source codes in diagnostic messages.
 
 ### **phpcs.trace.server**
 
-[ Optional | **Default**: `off` ]
+[ Scope: `User` | Optional | **Default**: `off` ]
 
 This setting controls whether the trace server is activated. Possible values you can use is `off`, `messages` or `verbose`.
 
@@ -209,7 +210,7 @@ This setting controls whether the trace server is activated. Possible values you
 
 ### **phpcs.composerJsonPath**
 
-[ Optional | **Default**: `composer.json` ]
+[ Scope: `All` | Optional | **Default**: `composer.json` ]
 
 This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
