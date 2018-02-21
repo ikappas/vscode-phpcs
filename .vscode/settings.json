@@ -29,6 +29,7 @@
 		"phpcs",
 		"pkg",
 		"pkgs",
+		"preinstall",
 		"quickstart",
 		"rtrim",
 		"ruleset",
