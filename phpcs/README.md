@@ -8,30 +8,34 @@ Visual Studio Code must be installed in order to use this plugin. If Visual Stud
 
 ## Linter Installation
 
-Before using this plugin, you must ensure that `phpcs` is installed on your system. The installation can be performed system-wide using [pear](http://pear.php.net/) or project-wide using [composer](https://getcomposer.org/).
+Before using this plugin, you must ensure that `phpcs` is installed on your system. The preferred method is using [composer](https://getcomposer.org/) for both system-wide and project-wide installations.
 
 Once phpcs is installed, you can proceed to install the vscode-phpcs plugin if it is not yet installed.
 
-> **NOTE:** This plugin will detect whether your project has been set up to use phpcs via composer and use the project specific `phpcs` over the system-wide installation of `phpcs` automatically.
+> **NOTE:** This plugin can detect whether your project has been set up to use phpcs via composer and use the project specific `phpcs` over the system-wide installation of `phpcs` automatically. This feature requires that both composer.json and composer.lock file exist in your workspace root or the `phpcs.composerJsonPath` in order to check for the composer dependency. If you wish to bypass this feature you can set the `phpcs.executablePath` configuration setting.
+
+> **NOTE:** You can also install `phpcs` on your system using [pear](http://pear.php.net/) or even manually but is beyond the scope of this plugin.
 
 ### System-wide Installation
 
-The `phpcs` linter can be installed in your system using the PHP Extension and Application Repository (PEAR).
+The `phpcs` linter can be installed globally using the Composer Dependency Manager for PHP.
 
-1. Install [php](http://php.net).
-2. Install [pear](http://pear.php.net).
-3. Install `phpcs` by typing the following in a terminal:
+1. Install [composer](https://getcomposer.org/doc/00-intro.md).
+1. Require `phpcs` package by typing the following in a terminal:
+
     ```bash
-    pear install PHP_CodeSniffer
+    composer global require squizlabs/php_codesniffer
     ```
+
+    ```bash
 
 ### Project-wide Installation
 
 The `phpcs` linter can be installed in your project using the Composer Dependency Manager for PHP.
 
-1. Install [php](http://php.net).
-2. Install [composer](https://getcomposer.org/doc/00-intro.md).
-3. Require `phpcs` package by typing the following at the root of your project in a terminal:
+1. Install [composer](https://getcomposer.org/doc/00-intro.md).
+1. Require `phpcs` package by typing the following at the root of your project in a terminal:
+
     ```bash
     composer require --dev squizlabs/php_codesniffer
     ```
@@ -39,96 +43,182 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 ### Plugin Installation
 
 1. Open Visual Studio Code.
-2. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
-3. Type ext install phpcs to find the extension.
-4. Press Enter or click the cloud icon to install it.
-5. Restart Visual Studio Code when prompted.
+1. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
+1. Type ext install phpcs to find the extension.
+1. Press Enter or click the cloud icon to install it.
+1. Restart Visual Studio Code when prompted.
 
-## Configuration
+## Basic Configuration
 
-There are various options that can be configured by making changes to your user or workspace preferences.
+There are various options that can be configured to control how the plugin operates which can be set
+in your user, workspace or folder preferences.
 
 ### **phpcs.enable**
 
-[ Optional | **Default**: `true` ]
+[ Scope: `All` | Optional | **Default**: `true` ]
+
 This setting controls whether `phpcs` linting is enabled.
+
+### **phpcs.executablePath**
+
+[ Scope: `All` | Optional | **Default**: `null` ]
+
+This setting controls the executable path for the `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
+If omitted, the plugin will try to locate the path parsing your composer configuration or the global path.
 
 ### **phpcs.standard**
 
-[ Optional | **Default:** `null` ]
+[ Scope: `All` | Optional | **Default:** `null` ]
+
 This setting controls the coding standard used by `phpcs`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
 
 > **NOTE:** While using composer dependency manager over global installation make sure you use the phpcs commands under your project scope !
 
 The following values are applicable:
 
-1. This setting can be set to `null`, which is the default behaviour and uses the `default_standard` when set in the `phpcs` configuration or fallback to the `Pear` coding standard.
-    ```json
     {
         "phpcs.standard": null
     }
     ```
+
     You may set the `default_standard` used by phpcs using the following command:
+
     ```bash
     phpcs --config-set default_standard <value>
     ```
+
     or when using composer dependency manager from the root of your project issue the following command:
+
     ```bash
     ./vendor/bin/phpcs --config-set default_standard <value>
     ```
-2. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
+
+1. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
+
     ```json
     {
         "phpcs.standard": "PSR2"
     }
     ```
-3. The setting can me set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
+
+1. The setting can me set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
+
     ```json
     {
         "phpcs.standard": "WordPress"
     }
     ```
+
     After you install the custom coding standard, you can make it available to phpcs by issuing the following command:
+
     ```bash
     phpcs --config-set installed_paths <path/to/custom/coding/standard>
     ```
+
     or when using composer dependency manager from the root of your project issue the following command:
+
     ```bash
     ./vendor/bin/phpcs --config-set installed_paths <path/to/custom/coding/standard>
     ```
-4. The setting can be set to the absolute path to a custom coding standard:
+
+1. The setting can be set to the absolute path to a custom coding standard:
+
     ```json
     {
         "phpcs.standard": "/path/to/coding/standard"
     }
     ```
-    or you can use the path to a custom rulset:
+
+    or you can use the path to a custom ruleset:
+
     ```json
     {
         "phpcs.standard": "/path/to/project/phpcs.xml"
     }
     ```
-5. The setting can be set to your workspace relative path to a custom coding standard:
+
+1. The setting can be set to your workspace relative path to a custom coding standard:
+
     ```json
     {
         "phpcs.standard": "./vendor/path/to/coding/standard"
     }
     ```
-    or you can use the path to your project's custom rulset:
+
+    or you can use the path to your project's custom ruleset:
+
     ```json
     {
         "phpcs.standard": "./phpcs.xml"
     }
     ```
 
-### **phpcs.ignore**
+### **phpcs.autoConfigSearch**
 
-[ Optional | **Default:** `null` ]
-This setting controls the files and directories to ignore by `phpcs`. You may specify a comma separated list of patterns to ignore files and directories.
+[ Scope: `All` | Optional | **Type:** `boolean` | **Default:** `true` ]
+
+Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides `phpcs.standard` configuration when a ruleset is found.
+
+> **NOTE:** This option does not apply for unsaved documents (in-memory).
+
+### **phpcs.ignorePatterns**
+
+[ Scope: `All` | Optional | **Type:** `array` | **Default:** `[]` ]
+
+An array of glob patterns to skip files and folders that match when linting your documents.
+
+```json
+{
+    "phpcs.ignorePatterns": [
+        "*/ignored-file.php",
+        "*/ignored-dir/*"
+    ]
+}
+```
+
+### **phpcs.errorSeverity**
+
+[ Scope: `All` | Optional | **Type:** `number` | **Default:** `5` ]
+
+The minimum severity an error must have to be displayed. You may specify an integer value.
+
+### **phpcs.warningSeverity**
+
+[ Scope: `All` | Optional | **Type:** `number` | **Default:** `5` ]
+
+The minimum severity a warning must have to be displayed. You may specify an integer value.
+
+### **phpcs.showWarnings**
+
+[ Scope: `All` | Optional | **Default**: `true` ]
+
+Control whether warnings are displayed.
+
+### **phpcs.showSources**
+
+[ Scope: `All` | Optional | **Default**: `false` ]
+
+Show sniff source codes in diagnostic messages.
+
+### **phpcs.trace.server**
+
+[ Scope: `User` | Optional | **Default**: `off` ]
+
+This setting controls whether the trace server is activated. Possible values you can use is `off`, `messages` or `verbose`.
+
+## Advanced Configuration
+
+### **phpcs.composerJsonPath**
+
+[ Scope: `All` | Optional | **Default**: `composer.json` ]
+
+This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
 ## Acknowledgements
 
 The extension architecture is based off of the [Language Server Node Example](https://github.com/Microsoft/vscode-languageserver-node-example).
+
+Additional inspiration comes from [Atom Linter-phpcs](https://github.com/AtomLinter/linter-phpcs).
 
 ## Contributing and Licensing
 

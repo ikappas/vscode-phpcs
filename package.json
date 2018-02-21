@@ -1,0 +1,44 @@
+{
+  "name": "phpcs",
+  "description": "PHP CodeSniffer for Visual Studio Code",
+  "version": "1.0.0",
+  "author": "Ioannis Kappas",
+  "publisher": "ikappas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ikappas/vscode-phpcs.git"
+  },
+  "scripts": {
+    "test": "npm-run-all --parallel test:*",
+    "test:server": "cd phpcs-server && npm test",
+    "test:client": "cd phpcs && npm test",
+    "preinstall": "rimraf node_modules",
+    "postinstall": "npm-run-all --parallel postinstall:*",
+    "postinstall:server": "cd phpcs-server && npm install",
+    "postinstall:client": "cd phpcs && npm install",
+    "compile": "npm-run-all --serial clean:* compile:*",
+    "compile:server": "cd phpcs-server && npm run installServer && cd .. && tsc -p phpcs-server/tsconfig.json",
+    "compile:client": "tsc -p phpcs/tsconfig.json",
+    "watch:server": "cd phpcs-server && npm run installServer && cd .. && tsc -w -p phpcs-server/tsconfig.json",
+    "watch:client": "tsc -w -p phpcs/tsconfig.json",
+    "clean": "npm-run-all --parallel clean:*",
+    "clean:server": "cd phpcs-server && npm run clean",
+    "clean:client": "cd phpcs && npm run clean"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "6.0.0",
+    "@types/expect": "1.20.2",
+    "@types/minimatch": "^3.0.3",
+    "@types/mocha": "2.2.48",
+    "@types/node": "^8.9.4",
+    "@types/semver": "^5.5.0",
+    "mocha": "^5.0.1",
+    "npm-run-all": "^4.1.2",
+    "rimraf": "^2.6.2",
+    "ts-node": "^5.0.0",
+    "tslint": "^5.9.1",
+    "typescript": "^2.7.2",
+    "typescript-formatter": "^7.1.0"
+  }
+}

@@ -2,76 +2,92 @@
  * Copyright (c) Ioannis Kappas. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-/// <reference path="./thenable.ts" />
-'use strict';
+"use strict";
 
-// import {
-// 	createConnection, IConnection, TextDocumentSyncKind,
-// 	ResponseError, NotificationType,
-// 	InitializeParams, InitializeResult, InitializeError,
-// 	Diagnostic, DiagnosticSeverity, Position, Files,
-// 	TextDocuments, PublishDiagnosticsParams,
-// 	ErrorMessageTracker, DidChangeConfigurationParams, DidChangeWatchedFilesParams,
-// 	TextDocumentIdentifier
-// } from 'vscode-languageserver';
+import * as proto from "./protocol";
+import * as strings from "./base/common/strings";
 
 import {
-	TextDocumentIdentifier, TextDocumentChangeEvent
-} from 'vscode-languageserver-types';
-
-import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, InitializeError,
-	DidChangeConfigurationParams, DidChangeWatchedFilesParams,
-	ErrorMessageTracker, PublishDiagnosticsParams, Files, ResponseError
+	ClientCapabilities,
+	createConnection,
+	DidChangeConfigurationParams,
+	DidChangeWatchedFilesParams,
+	Files,
+	IConnection,
+	InitializeParams,
+	InitializeResult,
+	IPCMessageReader,
+	IPCMessageWriter,
+	Proposed,
+	ProposedFeatures,
+	PublishDiagnosticsParams,
+	TextDocument,
+	TextDocumentChangeEvent,
+	TextDocumentIdentifier,
+	TextDocuments
 } from 'vscode-languageserver';
 
-import * as os from "os";
-import * as url from "url";
-import * as proto from "./protocol";
-import { PhpcsLinter, PhpcsSettings } from "./linter";
+import { PhpcsLinter } from "./linter";
+import { PhpcsSettings } from "./settings";
+import { StringResources as SR } from "./strings";
 
 class PhpcsServer {
 
-    private connection: IConnection;
-    private settings: PhpcsSettings;
-    private ready: boolean = false;
-    private documents: TextDocuments;
-    private linter: PhpcsLinter;
-	private rootPath: string;
-	private _validating: { [uri: string]: TextDocument };
+	private connection: IConnection;
+	private documents: TextDocuments;
+	private validating: Map<string, TextDocument>;
+
+	// Cache the settings of all open documents
+	private hasConfigurationCapability: boolean = false;
+	private hasWorkspaceFolderCapability: boolean = false;
+
+	private globalSettings: PhpcsSettings;
+	private defaultSettings: PhpcsSettings = {
+		enable: true,
+		workspaceRoot: null,
+		executablePath: null,
+		composerJsonPath: null,
+		standard: null,
+		autoConfigSearch: true,
+		showSources: false,
+		showWarnings: true,
+		ignorePatterns: [],
+		warningSeverity: 5,
+		errorSeverity: 5,
+	};
+	private documentSettings: Map<string, Promise<PhpcsSettings>> = new Map();
 
 	/**
 	 * Class constructor.
 	 *
 	 * @return A new instance of the server.
 	 */
-    constructor() {
-		this._validating = Object.create(null);
-        this.connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-        this.documents = new TextDocuments();
-        this.documents.listen(this.connection);
-        this.connection.onInitialize((params) => {
-            return this.onInitialize(params);
-        });
-        this.connection.onDidChangeConfiguration((params) => {
-            this.onDidChangeConfiguration(params);
-        });
-        this.connection.onDidChangeWatchedFiles((params) => {
-            this.onDidChangeWatchedFiles(params);
-        });
-        this.documents.onDidOpen((event) => {
-            this.onDidOpenDocument(event);
-        });
-        this.documents.onDidSave((event) => {
-            this.onDidSaveDocument(event);
-        });
-		this.documents.onDidClose((event) => {
-            this.onDidCloseDocument(event);
-        });
-    }
+	constructor() {
+		this.validating = new Map();
+		this.connection = createConnection(ProposedFeatures.all, new IPCMessageReader(process), new IPCMessageWriter(process));
+		this.documents = new TextDocuments();
+		this.documents.listen(this.connection);
+		this.connection.onInitialize(this.safeEventHandler(this.onInitialize));
+		this.connection.onInitialized(this.safeEventHandler(this.onDidInitialize));
+		this.connection.onDidChangeConfiguration(this.safeEventHandler(this.onDidChangeConfiguration));
+		this.connection.onDidChangeWatchedFiles(this.safeEventHandler(this.onDidChangeWatchedFiles));
+		this.documents.onDidChangeContent(this.safeEventHandler(this.onDidChangeDocument));
+		this.documents.onDidOpen(this.safeEventHandler(this.onDidOpenDocument));
+		this.documents.onDidSave(this.safeEventHandler(this.onDidSaveDocument));
+		this.documents.onDidClose(this.safeEventHandler(this.onDidCloseDocument));
+	}
+
+	/**
+	 * Safely handle event notifications.
+	 * @param callback An event handler.
+	 */
+	private safeEventHandler(callback: (...args: any[]) => Promise<any>): (...args: any[]) => Promise<any> {
+		return (...args: any[]): Promise<any> => {
+			return callback.apply(this, args).catch((error: Error) => {
+				this.connection.window.showErrorMessage(`phpcs: ${error.message}`);
+			});
+		};
+	}
 
 	/**
 	 * Handles server initialization.
@@ -79,30 +95,45 @@ class PhpcsServer {
 	 * @param params The initialization parameters.
 	 * @return A promise of initialization result or initialization error.
 	 */
-    private onInitialize(params: InitializeParams) : Thenable<InitializeResult | ResponseError<InitializeError>> {
-		this.rootPath = params.rootPath;
-		return PhpcsLinter.resolvePath(this.rootPath).then((linter): InitializeResult | ResponseError<InitializeError> => {
-			this.linter = linter;
-			let result: InitializeResult = { capabilities: { textDocumentSync: this.documents.syncKind } };
-			return result;
-		}, (error) => {
-			return Promise.reject(
-				new ResponseError<InitializeError>(99,
-				error,
-				{ retry: true }));
+	private async onInitialize(params: InitializeParams & Proposed.WorkspaceFoldersInitializeParams): Promise<InitializeResult> {
+		let capabilities = params.capabilities as ClientCapabilities & Proposed.WorkspaceFoldersClientCapabilities & Proposed.ConfigurationClientCapabilities;
+		this.hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
+		this.hasConfigurationCapability = capabilities.workspace && !!capabilities.workspace.configuration;
+		return Promise.resolve<InitializeResult>({
+			capabilities: {
+				textDocumentSync: this.documents.syncKind
+			}
 		});
-    }
+	}
+
+	/**
+	 * Handles connection initialization completion.
+	 */
+	private async onDidInitialize(): Promise<void> {
+		if (this.hasWorkspaceFolderCapability) {
+			(this.connection.workspace as any).onDidChangeWorkspaceFolders((_event: Proposed.WorkspaceFoldersChangeEvent) => {
+				this.connection.tracer.log('Workspace folder change event received');
+			});
+		}
+	}
+
 	/**
 	 * Handles configuration changes.
 	 *
 	 * @param params The changed configuration parameters.
 	 * @return void
 	 */
-    private onDidChangeConfiguration(params: DidChangeConfigurationParams): void {
-        this.settings = params.settings.phpcs;
-        this.ready = true;
-        this.validateMany(this.documents.all());
-    }
+	private async onDidChangeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
+		if (this.hasConfigurationCapability) {
+			this.documentSettings.clear();
+		} else {
+			this.globalSettings = {
+				...this.defaultSettings,
+				...params.settings.phpcs
+			};
+		}
+		await this.validateMany(this.documents.all());
+	}
 
 	/**
 	 * Handles watched files changes.
@@ -110,8 +141,8 @@ class PhpcsServer {
 	 * @param params The changed watched files parameters.
 	 * @return void
 	 */
-	private onDidChangeWatchedFiles(params: DidChangeWatchedFilesParams) : void {
-		this.validateMany(this.documents.all());
+	private async onDidChangeWatchedFiles(_params: DidChangeWatchedFilesParams): Promise<void> {
+		await this.validateMany(this.documents.all());
 	}
 
 	/**
@@ -120,8 +151,8 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidOpenDocument(event: TextDocumentChangeEvent ) : void {
-		this.validateSingle(event.document);
+	private async onDidOpenDocument({ document }: TextDocumentChangeEvent): Promise<void> {
+		await this.validateSingle(document);
 	}
 
 	/**
@@ -130,8 +161,8 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidSaveDocument(event: TextDocumentChangeEvent ) : void {
-		this.validateSingle(event.document);
+	private async onDidSaveDocument({ document }: TextDocumentChangeEvent): Promise<void> {
+		await this.validateSingle(document);
 	}
 
 	/**
@@ -140,8 +171,30 @@ class PhpcsServer {
 	 * @param event The text document change event.
 	 * @return void
 	 */
-	private onDidCloseDocument(event: TextDocumentChangeEvent ) : void {
-  		this.connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
+	private async onDidCloseDocument({ document }: TextDocumentChangeEvent): Promise<void> {
+		const uri = document.uri;
+
+		// Clear cached document settings.
+		if (this.documentSettings.has(uri)) {
+			this.documentSettings.delete(uri);
+		}
+
+		// Clear validating status.
+		if (this.validating.has(uri)) {
+			this.validating.delete(uri);
+		}
+
+		this.clearDiagnostics(uri);
+	}
+
+	/**
+	 * Handles changes of text documents.
+	 *
+	 * @param event The text document change event.
+	 * @return void
+	 */
+	private async onDidChangeDocument({ document }: TextDocumentChangeEvent): Promise<void> {
+		await this.validateSingle(document);
 	}
 
 	/**
@@ -149,9 +202,56 @@ class PhpcsServer {
 	 *
 	 * @return void
 	 */
-    public listen(): void {
-        this.connection.listen();
-    }
+	public listen(): void {
+		this.connection.listen();
+	}
+
+	/**
+	 * Sends diagnostics computed for a given document to VSCode to render them in the
+	 * user interface.
+	 *
+	 * @param params The diagnostic parameters.
+	 */
+	private sendDiagnostics(params: PublishDiagnosticsParams): void {
+		this.connection.sendDiagnostics(params);
+	}
+
+	/**
+	 * Clears the diagnostics computed for a given document.
+	 *
+	 * @param uri The document uri for which to clear the diagnostics.
+	 */
+	private clearDiagnostics(uri: string): void {
+		this.connection.sendDiagnostics({ uri, diagnostics: [] });
+	}
+
+	/**
+	 * Sends a notification for starting validation of a document.
+	 *
+	 * @param document The text document on which validation started.
+	 */
+	private sendStartValidationNotification(document: TextDocument): void {
+		this.validating.set(document.uri, document);
+		this.connection.sendNotification(
+			proto.DidStartValidateTextDocumentNotification.type,
+			{ textDocument: TextDocumentIdentifier.create(document.uri) }
+		);
+		this.connection.tracer.log(strings.format(SR.DidStartValidateTextDocument, document.uri));
+	}
+
+	/**
+	 * Sends a notification for ending validation of a document.
+	 *
+	 * @param document The text document on which validation ended.
+	 */
+	private sendEndValidationNotification(document: TextDocument): void {
+		this.validating.delete(document.uri);
+		this.connection.sendNotification(
+			proto.DidEndValidateTextDocumentNotification.type,
+			{ textDocument: TextDocumentIdentifier.create(document.uri) }
+		);
+		this.connection.tracer.log(strings.format(SR.DidEndValidateTextDocument, document.uri));
+	}
 
 	/**
 	 * Validate a single text document.
@@ -159,87 +259,79 @@ class PhpcsServer {
 	 * @param document The text document to validate.
 	 * @return void
 	 */
-    public validateSingle(document: TextDocument): void {
-		let docUrl = url.parse(document.uri);
+	public async validateSingle(document: TextDocument): Promise<void> {
+		const { uri } = document;
+		if (this.validating.has(uri) === false) {
+			let settings = await this.getDocumentSettings(document);
+			if (settings.enable) {
+				this.sendStartValidationNotification(document);
+				let phpcs = await PhpcsLinter.create(settings.executablePath);
+				let diagnostics = await phpcs.lint(document, settings).catch((error) => {
+					this.sendEndValidationNotification(document);
+					throw new Error(this.getExceptionMessage(error, document));
+				});
 
-		// Only process file documents.
-		if (docUrl.protocol == "file:" && this._validating[document.uri] === undefined ) {
-			this._validating[ document.uri ] = document;
-			this.sendStartValidationNotification(document);
-			this.linter.lint(document, this.settings, this.rootPath).then(diagnostics => {
-				delete this._validating[document.uri];
 				this.sendEndValidationNotification(document);
-				this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
-			}, (error) => {
-				delete this._validating[document.uri];
-				this.sendEndValidationNotification(document);
-				this.connection.window.showErrorMessage(this.getExceptionMessage(error, document));
-			});
+				this.sendDiagnostics({ uri, diagnostics });
+			}
 		}
-    }
+	}
 
-	private sendStartValidationNotification(document:TextDocument): void {
-		this.connection.sendNotification(
-			proto.DidStartValidateTextDocumentNotification.type,
-			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
-		);
-	}
-	private sendEndValidationNotification(document:TextDocument): void {
-		this.connection.sendNotification(
-			proto.DidEndValidateTextDocumentNotification.type,
-			{ textDocument: TextDocumentIdentifier.create( document.uri ) }
-		);
-	}
 	/**
 	 * Validate a list of text documents.
 	 *
-	 * @param documents The list of textdocuments to validate.
+	 * @param documents The list of text documents to validate.
 	 * @return void
 	 */
-    public validateMany(documents: TextDocument[]): void {
-		let tracker = new ErrorMessageTracker();
-		let promises: Thenable<PublishDiagnosticsParams>[] = [];
+	public async validateMany(documents: TextDocument[]): Promise<void> {
+		for (var i = 0, len = documents.length; i < len; i++) {
+			await this.validateSingle(documents[i]);
+		}
+	}
 
-		documents.forEach(document => {
-			this.sendStartValidationNotification(document);
-			promises.push( this.linter.lint(document, this.settings, this.rootPath).then<PublishDiagnosticsParams>((diagnostics: Diagnostic[]): PublishDiagnosticsParams => {
-				this.connection.console.log(`processing: ${document.uri}`);
-				this.sendEndValidationNotification(document);
-				let diagnostic = { uri: document.uri, diagnostics };
-				this.connection.sendDiagnostics(diagnostic);
-				return diagnostic;
-			}, (error: any): PublishDiagnosticsParams => {
-				this.sendEndValidationNotification(document);
-				tracker.add(this.getExceptionMessage(error, document));
-				return { uri: document.uri, diagnostics: [] };
-			}));
-		});
-
-		Promise.all( promises ).then( results => {
-			tracker.sendErrors(this.connection);
-		});
-    }
+	/**
+	 * Get the settings for the specified document.
+	 *
+	 * @param document The text document for which to get the settings.
+	 * @return A promise of PhpcsSettings.
+	 */
+	private async getDocumentSettings(document: TextDocument): Promise<PhpcsSettings> {
+		const { uri } = document;
+		let settings: Promise<PhpcsSettings>;
+		if (this.hasConfigurationCapability) {
+			if (this.documentSettings.has(uri)) {
+				settings = this.documentSettings.get(uri);
+			} else {
+				const configurationItem: Proposed.ConfigurationItem = uri.match(/^untitled:/) ? {} : { scopeUri: uri };
+				settings = (this.connection.workspace as any).getConfiguration(configurationItem);
+				this.documentSettings.set(uri, settings);
+			}
+		} else {
+			settings = Promise.resolve(this.globalSettings);
+		}
+		return settings;
+	}
 
 	/**
 	 * Get the exception message from an exception object.
 	 *
-	 * @param exeption The exception to parse.
-	 * @param document The document where the exception occured.
+	 * @param exception The exception to parse.
+	 * @param document The document where the exception occurred.
 	 * @return string The exception message.
 	 */
-    private getExceptionMessage(exception: any, document: TextDocument): string {
-        let msg: string = null;
-        if (typeof exception.message === "string" || exception.message instanceof String) {
-            msg = <string>exception.message;
-            msg = msg.replace(/\r?\n/g, " ");
-            if (/^ERROR: /.test(msg)) {
-                msg = msg.substr(5);
-            }
-        } else {
-            msg = `An unknown error occured while validating file: ${Files.uriToFilePath(document.uri) }`;
-        }
-        return `phpcs: ${msg}`;
-    }
+	private getExceptionMessage(exception: any, document: TextDocument): string {
+		let message: string = null;
+		if (typeof exception.message === 'string' || exception.message instanceof String) {
+			message = <string>exception.message;
+			message = message.replace(/\r?\n/g, ' ');
+			if (/^ERROR: /.test(message)) {
+				message = message.substr(5);
+			}
+		} else {
+			message = strings.format(SR.UnknownErrorWhileValidatingTextDocument, Files.uriToFilePath(document.uri));
+		}
+		return message;
+	}
 }
 
 let server = new PhpcsServer();

@@ -1,19 +1,34 @@
 # vscode-phpcs
 
-Integrates [phpcs](https://github.com/squizlabs/PHP_CodeSniffer.git) into VS Code.
+[![Maintainers Wanted](https://img.shields.io/badge/maintainers-wanted-red.svg)](https://github.com/pickhardt/maintainers-wanted)
+[![Current Version](https://vsmarketplacebadge.apphb.com/version/ikappas.phpcs.svg)](https://marketplace.visualstudio.com/items?itemName=ikappas.phpcs)
+[![Install Count](https://vsmarketplacebadge.apphb.com/installs/ikappas.phpcs.svg)](https://marketplace.visualstudio.com/items?itemName=ikappas.phpcs)
+[![Open Issues](https://vsmarketplacebadge.apphb.com/rating/ikappas.phpcs.svg)](https://marketplace.visualstudio.com/items?itemName=ikappas.phpcs)
 
-## Development setup
+Integrates [phpcs](https://github.com/squizlabs/PHP_CodeSniffer.git) into [Visual Studio Code](https://code.visualstudio.com/).
 
-- run npm install inside the `phpcs` and `phpcs-server` folders
-- open VS Code on `phpcs` and `phpcs-server`
+## Looking for additional maintainers
 
-## Developing the server
+Due to current work obligations, I am unable to commit enough time to steadily maintain this project, so I am looking for co-maintainers that are familiar with node.js, typescript and vscode plugin authoring.
 
-- open VS Code on `phpcs-server`
-- run `npm run compile` or `npm run watch` to build the server and copy it into the `phpcs` folder
-- to debug press F5 which attaches a debugger to the server
+If you want to help maintain this project, please contact me.
 
-## Developing the extension/client
+## Setup Development Version
 
-- open VS Code on `phpcs`
-- run F5 to build and debug the extension
+- install the [Visual Studio Code](https://code.visualstudio.com/) [npm extension](https://marketplace.visualstudio.com/items?itemName=eg2.vscode-npm-script)
+- clone this repository and checkout `develop` branch
+- open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
+- run VS Code task `npm install`
+
+## Run/Debug Development Version
+
+To run the development version of the `phpcs` extension:
+
+- open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
+- select sidebar option `Debug`
+- select option `Client + Server` from the Debug drop-down menu
+- press `Start Debugging` button or hit F5
+
+This will launch a new VS Code window named `Extension Development Host`, automatically using the development version of the `phpcs` extension.
+
+> If you don't have an open php file on your `Extension Development Host` the server debug session will timeout and you will need to relaunch it from the debug panel.

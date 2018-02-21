@@ -1,76 +1,133 @@
 {
-	"name": "phpcs",
-	"description": "PHP CodeSniffer for Visual Studio Code",
-	"version": "0.7.0",
-	"author": "Ioannis Kappas",
-	"publisher": "ikappas",
-	"license": "MIT",
-	"icon": "phpcs_icon.svg",
-	"galleryBanner": {
-		"color": "#6082bb",
-		"theme": "dark"
-	},
-	"homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/ikappas/vscode-phpcs.git"
-	},
-	"bugs": {
-		"url": "https://github.com/ikappas/vscode-phpcs/issues"
-	},
-	"categories": [
-		"Languages",
-		"Linters"
-	],
-	"engines": {
-		"vscode": "^1.4.0"
-	},
-	"activationEvents": [
-		"onLanguage:php"
-	],
-	"main": "./out/src/extension",
-	"contributes": {
-		"configuration": {
-			"type": "object",
-			"title": "PHP CodeSniffer configuration",
-			"properties": {
-				"phpcs.enable": {
-					"type": "boolean",
-					"default": true,
-					"description": "Control whether phpcs is enabled for PHP files or not."
-				},
-				"phpcs.standard": {
-					"type": [
-						"string",
-						"null"
-					],
-					"default": null,
-					"description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
-				},
-				"phpcs.ignore": {
-					"type": [
-						"string",
-						"null"
-					],
-					"default": null,
-					"description": "Optional. A comma separated list of patterns to ignore files and directories."
-				}
-			}
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "tsc -p ./",
-		"compile": "tsc -watch -p ./",
-		"update-vscode": "node ./node_modules/vscode/bin/install",
-		"postinstall": "node ./node_modules/vscode/bin/install"
-	},
-	"devDependencies": {
-		"@types/mocha": "^2.2.33",
-		"@types/node": "^6.0.52",
-		"typescript": "^2.1.4",
-		"vscode": "^1.0.3"
-	},
-		"dependencies": {
-		"vscode-languageclient": "^2.6.3"
-	}
+  "name": "phpcs",
+  "description": "PHP CodeSniffer for Visual Studio Code",
+  "version": "1.0.0",
+  "author": "Ioannis Kappas",
+  "publisher": "ikappas",
+  "license": "MIT",
+  "galleryBanner": {
+    "color": "#6082bb",
+    "theme": "dark"
+  },
+  "icon": "phpcs_icon.png",
+  "homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ikappas/vscode-phpcs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ikappas/vscode-phpcs/issues"
+  },
+  "categories": [
+    "Languages",
+    "Linters"
+  ],
+  "engines": {
+    "vscode": "^1.20.0"
+  },
+  "activationEvents": [
+    "onLanguage:php"
+  ],
+  "main": "./out/src/extension",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "PHP CodeSniffer configuration",
+      "properties": {
+        "phpcs.enable": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Control whether phpcs is enabled for PHP files or not."
+        },
+        "phpcs.executablePath": {
+          "scope": "resource",
+          "type": "string",
+          "default": null,
+          "description": "Optional. The path to the phpcs executable."
+        },
+        "phpcs.composerJsonPath": {
+          "scope": "resource",
+          "type": "string",
+          "default": "composer.json",
+          "description": "The path to composer.json"
+        },
+        "phpcs.standard": {
+          "scope": "resource",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
+        },
+        "phpcs.autoConfigSearch": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides custom standards defined above."
+        },
+        "phpcs.ignorePatterns": {
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "A glob pattern to skip files and folders that match."
+          },
+          "default": [],
+          "description": "An array of glob patterns to skip files and folders that match when linting your documents."
+        },
+        "phpcs.errorSeverity": {
+          "scope": "resource",
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "The minimum severity an error must have to be displayed."
+        },
+        "phpcs.warningSeverity": {
+          "scope": "resource",
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "The minimum severity a warning must have to be displayed."
+        },
+        "phpcs.showWarnings": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Control whether warnings are displayed."
+        },
+        "phpcs.showSources": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "description": "Show sniff source codes in diagnostic messages."
+        },
+        "phpcs.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VSCode and the language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -watch -p ./",
+    "update-vscode": "node ./node_modules/vscode/bin/install",
+    "preinstall": "rimraf node_modules",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "mocha -r ts-node/register --ui tdd --timeout 10000 test/**/*.test.ts",
+    "clean": "rimraf out"
+  },
+  "dependencies": {
+    "vscode": "^1.1.10",
+    "vscode-languageclient": "^3.5.0"
+  }
 }

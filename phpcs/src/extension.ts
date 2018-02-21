@@ -5,26 +5,51 @@
 "use strict";
 
 import * as path from "path";
-import * as vscode from "vscode";
 import * as proto from "./protocol";
-import { PhpcsStatus } from "./status";
 
-import { workspace, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem } from "vscode";
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, TextDocumentIdentifier } from "vscode-languageclient";
+import {
+	CancellationToken,
+	ExtensionContext,
+	workspace
+} from "vscode";
+
+import {
+	LanguageClient,
+	LanguageClientOptions,
+	Middleware,
+	Proposed,
+	ProposedFeatures,
+	ServerOptions,
+	TransportKind
+} from "vscode-languageclient";
+
+import { PhpcsStatus } from "./status";
+import { PhpcsConfiguration } from "./configuration";
 
 export function activate(context: ExtensionContext) {
 
+	let client: LanguageClient;
+	let config: PhpcsConfiguration;
+
 	// The server is implemented in node
-	let serverModule = context.asAbsolutePath(path.join("server", "server.js"));
+	let serverModule = context.asAbsolutePath(path.join("server", "src", "server.js"));
 
 	// The debug options for the server
-	let debugOptions = { execArgv: ["--nolazy", "--debug=6199"] };
+	let debugOptions = { execArgv: ["--nolazy", "--inspect=6199"] };
 
 	// If the extension is launch in debug mode the debug server options are use
 	// Otherwise the run options are used
 	let serverOptions: ServerOptions = {
-		run : { module: serverModule, transport: TransportKind.ipc },
+		run: { module: serverModule, transport: TransportKind.ipc },
 		debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
+	};
+
+	let middleware: ProposedFeatures.ConfigurationMiddleware | Middleware = {
+		workspace: {
+			configuration: async (params: Proposed.ConfigurationParams, token: CancellationToken, next: Function) => {
+				return config.compute(params, token, next);
+			}
+		}
 	};
 
 	// Options to control the language client
@@ -32,40 +57,36 @@ export function activate(context: ExtensionContext) {
 		// Register the server for php documents
 		documentSelector: ["php"],
 		synchronize: {
-			// Synchronize the setting section "phpcs"" to the server
-			configurationSection: "phpcs",
 			// Notify the server about file changes to 'ruleset.xml' files contain in the workspace
 			fileEvents: workspace.createFileSystemWatcher("**/ruleset.xml")
-		}
+		},
+		middleware: middleware as Middleware
 	};
 
-	// Create the language client the client.
-	let client = new LanguageClient("PHP CodeSniffer Linter", serverOptions, clientOptions);
+	// Create the language client.
+	client = new LanguageClient("phpcs", "PHP Code Sniffer", serverOptions, clientOptions);
 
-	// Create the save handler.
-	let saveHandler = workspace.onDidSaveTextDocument(document => {
-		if (document.languageId != `php`) {
-			return;
-		}
-		let params: proto.DidSaveTextDocumentNotificationParams = { textDocument: TextDocumentIdentifier.create( document.uri.toString() ) };
-		client.sendNotification<proto.DidSaveTextDocumentNotificationParams>(proto.DidSaveTextDocumentNotification.type, params);
-	});
+	// Register new proposed protocol if available.
+	client.registerProposedFeatures();
 
+	config = new PhpcsConfiguration(client);
+
+	// Create the status monitor.
 	let status = new PhpcsStatus();
-	client.onNotification( proto.DidStartValidateTextDocumentNotification.type, (event) => {
-		status.startProcessing(event.textDocument.uri);
-	});
-	client.onNotification( proto.DidEndValidateTextDocumentNotification.type, (event) => {
-		status.endProcessing(event.textDocument.uri);
+	client.onReady().then(() => {
+		config.initialize();
+		client.onNotification(proto.DidStartValidateTextDocumentNotification.type, event => {
+			status.startProcessing(event.textDocument.uri);
+		});
+		client.onNotification(proto.DidEndValidateTextDocumentNotification.type, event => {
+			status.endProcessing(event.textDocument.uri);
+		});
 	});
 
-	context.subscriptions.push(saveHandler);
-
-	// Create the settings monitor and start the monitor for the client.
-	let monitor = new SettingMonitor(client, "phpcs.enable").start();
+	client.start();
 
 	// Push the monitor to the context's subscriptions so that the
 	// client can be deactivated on extension deactivation
-	context.subscriptions.push(monitor);
 	context.subscriptions.push(status);
+	context.subscriptions.push(config);
 }

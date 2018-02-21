@@ -1,0 +1,39 @@
+{
+	"files.exclude": {
+		"out": false // set this to true to hide the "out" folder with the compiled JS files
+	},
+	"search.exclude": {
+		"out": true // set this to false to include "out" folder in search results
+	},
+	"typescript.tsdk": "./node_modules/typescript/lib",
+	"typescript.tsc.autoDetect": "off",
+	"files.trimTrailingWhitespace": true,
+	"editor.insertSpaces": false,
+	"editor.tabSize": 4,
+	"cSpell.words": [
+		"Composer",
+		"Drupal",
+		"Ioannis",
+		"Kappas",
+		"Squiz",
+		"WordPress",
+		"Zend",
+		"charcode",
+		"codesniffer",
+		"comspec",
+		"gitignore",
+		"ikappas",
+		"languageclient",
+		"languageserver",
+		"lockfile",
+		"phpcs",
+		"pkg",
+		"pkgs",
+		"preinstall",
+		"quickstart",
+		"rtrim",
+		"ruleset",
+		"squizlabs",
+		"testrunner"
+	]
+}

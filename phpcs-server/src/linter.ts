@@ -3,360 +3,280 @@
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 "use strict";
+import * as cp from "child_process";
+import * as extfs from "./base/node/extfs";
+import * as minimatch from "minimatch";
+import * as os from "os";
+import * as path from "path";
+import * as semver from "semver";
+import * as spawn from "cross-spawn";
+import * as strings from "./base/common/strings";
+import CharCode from "./base/common/charcode";
 
 import {
-	TextDocument, Diagnostic, DiagnosticSeverity, Files
+	Diagnostic,
+	DiagnosticSeverity,
+	Files,
+	Range,
+	TextDocument
 } from "vscode-languageserver";
 
-import cp = require("child_process");
-import path = require("path");
-import fs = require("fs");
-import os = require("os");
-import cc = require("./utils/charcode");
-
-interface PhpcsReport {
-	totals: PhpcsReportTotals;
-	files: Array<PhpcsReportFile>;
-}
-
-interface PhpcsReportTotals{
-	errors: number;
-	warnings: number;
-	fixable: number;
-}
-
-interface PhpcsReportFile {
-	erros: number;
-	warnings: number;
-	messages: Array<PhpcsReportMessage>;
-}
-
-interface PhpcsReportMessage {
-	message: string;
-	severity: number;
-	type: string;
-	line: number;
-	column: number;
-	fixable: boolean;
-}
-
-export interface PhpcsSettings {
-	enable: boolean;
-	standard: string;
-	ignore: string;
-}
-
-export class PhpcsPathResolver {
-	private rootPath: string;
-	private phpcsPath: string;
-	private phpcsExecutable : string;
-
-	constructor(rootPath: string) {
-		this.rootPath = rootPath;
-		let extension = /^win/.test(process.platform) ? ".bat" : "";
-		this.phpcsExecutable = `phpcs${extension}`;
-	}
-	/**
-	 * Determine whether composer.json exists at the root path.
-	 */
-	hasComposerJson(): boolean {
-		try {
-			return fs.existsSync(path.join(this.rootPath, "composer.json"));
-		} catch(exeption) {
-			return false;
-		}
-	}
-	/**
-	 * Determine whether composer.lock exists at the root path.
-	 */
-	hasComposerLock(): boolean {
-	   try {
-			return fs.existsSync(path.join(this.rootPath, "composer.lock"));
-		} catch(exeption) {
-			return false;
-		}
-	}
-	/**
-	 * Determine whether phpcs is set as a composer dependency.
-	 */
-	hasComposerPhpcsDependency(): boolean {
-		// Safely load composer.lock
-		let dependencies = null;
-		try {
-			dependencies = JSON.parse(fs.readFileSync(path.join(this.rootPath, "composer.lock"), "utf8"));
-		} catch(exception) {
-			dependencies = {};
-		}
-
-		// Determine phpcs dependency.
-		let result = false;
-		let BreakException = {};
-		if (dependencies["packages"] && dependencies["packages-dev"]) {
-			try {
-				[ dependencies["packages"], dependencies["packages-dev"]].forEach(pkgs => {
-					let match = pkgs.filter(pkg => {
-						return pkg.name === "squizlabs/php_codesniffer";
-					});
-					if (match.length !== 0) {
-						throw BreakException;
-					}
-				});
-			} catch(exception) {
-				if (exception === BreakException) {
-					result = true;
-				} else {
-					throw exception;
-				}
-			}
-		}
-		return result;
-	}
-	/**
-	 * Get the composer vendor path.
-	 */
-	getVendorPath(): string {
-		let vendorPath = path.join(this.rootPath, "vendor", "bin", this.phpcsExecutable);
-
-		// Safely load composer.json
-		let config = null;
-		try {
-			config = JSON.parse(fs.readFileSync(path.join(this.rootPath, "composer.json"), "utf8"));
-		}
-		catch (exception) {
-			config = {};
-		}
-
-		// Check vendor-bin configuration
-		if (config["config"] && config["config"]["vendor-dir"]) {
-			vendorPath = path.join(this.rootPath, config["config"]["vendor-dir"], "bin", this.phpcsExecutable);
-		}
-
-		// Check bin-bin configuration
-		if (config["config"] && config["config"]["bin-dir"]) {
-			vendorPath = path.join(this.rootPath, config["config"]["bin-dir"], this.phpcsExecutable);
-		}
-
-		return vendorPath;
-	}
-	resolve(): string {
-		this.phpcsPath = this.phpcsExecutable;
-
-		let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
-		let globalPaths = process.env.PATH.split(pathSeparator);
-		globalPaths.forEach(globalPath => {
-			let testPath = path.join( globalPath, this.phpcsExecutable );
-			if (fs.existsSync(testPath)) {
-				this.phpcsPath = testPath;
-				return false;
-			}
-		});
-
-		if (this.rootPath) {
-			// Determine whether composer.json exists in our workspace root.
-			if (this.hasComposerJson()) {
-
-				// Determine whether composer is installed.
-				if (this.hasComposerLock()) {
-
-					// Determine whether vendor/bin/phcs exists only when project depends on phpcs.
-					if (this.hasComposerPhpcsDependency()) {
-						let vendorPath = this.getVendorPath();
-						if (fs.existsSync(vendorPath)) {
-							this.phpcsPath = vendorPath;
-						} else {
-							throw `Composer phpcs dependency is configured but was not found under ${vendorPath}. You may need to update your dependencies using "composer update".`;
-						}
-					}
-
-				} else {
-					throw `A composer configuration file was found at the root of your project but seems uninitialized. You may need to initialize your dependencies using "composer install".`;
-				}
-			}
-		}
-		return this.phpcsPath;
-	}
-}
-
-function makeDiagnostic(document: TextDocument, message: PhpcsReportMessage): Diagnostic {
-
-	let lines = document.getText().split("\n");
-	let line = message.line - 1;
-	let lineString = lines[line];
-
-	// Process diagnostic start and end columns.
-	let start = message.column - 1;
-	let end = message.column;
-	let charCode = lineString.charCodeAt(start);
-	if (cc.isWhitespace(charCode)) {
-		for (var i = start + 1, len = lineString.length; i < len; i++) {
-			charCode = lineString.charCodeAt(i);
-			if (!cc.isWhitespace(charCode)) {
-				break;
-			}
-			end = i;
-		}
-	} else if (cc.isAlphaNumeric(charCode) || cc.isSymbol(charCode)) {
-		// Get the whole word
-		for (var i = start + 1, len = lineString.length; i < len; i++) {
-			charCode = lineString.charCodeAt(i);
-			if (!cc.isAlphaNumeric(charCode) && charCode !== 95) {
-				break;
-			}
-			end += 1;
-		}
-		// Move backwards
-		for (var i = start, len = 0; i >  len; i--) {
-			charCode = lineString.charCodeAt(i - 1);
-			if (!cc.isAlphaNumeric(charCode) && !cc.isSymbol(charCode) && charCode !== 95) {
-				break;
-			}
-			start -= 1;
-		}
-	}
-
-	let range = {
-		start: { line, character: start },
-		end: { line, character: end }
-	};
-
-	// Process diagnostic severity.
-	let severity = DiagnosticSeverity.Error;
-	if (message.type === "WARNING") {
-		severity = DiagnosticSeverity.Warning;
-	}
-
-	return Diagnostic.create( range, `${ message.message }`, severity, null, 'phpcs' );
-};
+import { StringResources as SR } from "./strings";
+import { PhpcsSettings } from "./settings";
+import { PhpcsMessage } from "./message";
 
 export class PhpcsLinter {
 
-	private phpcsPath: string;
+	private executablePath: string;
+	private executableVersion: string;
 
-	constructor(phpcsPath: string) {
-		this.phpcsPath = phpcsPath;
+	private constructor(executablePath: string, executableVersion: string) {
+		this.executablePath = executablePath;
+		this.executableVersion = executableVersion;
 	}
 
 	/**
-	* Resolve the phpcs path.
-	*/
-	static resolvePath(rootPath: string): Thenable<any> {
-		return new Promise<any>((resolve, reject) => {
-			try {
-				let phpcsPathResolver = new PhpcsPathResolver(rootPath);
-				let phpcsPath = phpcsPathResolver.resolve();
-				let command = phpcsPath;
+	 * Create an instance of the PhpcsLinter.
+	 */
+	static async create(executablePath: string): Promise<PhpcsLinter> {
+		try {
 
-				// Make sure we escape spaces in paths on Windows.
-				if ( /^win/.test(process.platform) ) {
-					command = `"${command}"`;
-				}
+			let result: Buffer = cp.execSync(`"${executablePath}" --version`);
 
-				cp.exec(`${command} --version`, function(error, stdout, stderr) {
+			const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
+			const versionMatches = result.toString().match(versionPattern);
 
-					if (error) {
-						reject("phpcs: Unable to locate phpcs. Please add phpcs to your global path or use composer depency manager to install it in your project locally.");
-					}
-
-					resolve(new PhpcsLinter(phpcsPath));
-				});
-			} catch(e) {
-				reject(e);
+			if (versionMatches === null) {
+				throw new Error(SR.InvalidVersionStringError);
 			}
-		});
+
+			const executableVersion = versionMatches[1];
+			return new PhpcsLinter(executablePath, executableVersion);
+
+		} catch (error) {
+			let message = error.message ? error.message : SR.CreateLinterErrorDefaultMessage;
+			throw new Error(strings.format(SR.CreateLinterError, message));
+		}
 	}
 
-	public lint(document: TextDocument, settings: PhpcsSettings, rootPath?: string): Thenable<Diagnostic[]> {
+	public async lint(document: TextDocument, settings: PhpcsSettings): Promise<Diagnostic[]> {
 
 		// Process linting paths.
 		let filePath = Files.uriToFilePath(document.uri);
-		let lintPath = this.phpcsPath;
 
-		// Make sure we escape spaces in paths on Windows.
-		if ( /^win/.test(process.platform) ) {
-			filePath = `"${filePath}"`;
-		 	lintPath = `"${lintPath}"`;
+		// Make sure we capitalize the drive letter in paths on Windows.
+		if (filePath !== undefined && /^win/.test(process.platform)) {
+			let pathRoot: string = path.parse(filePath).root;
+			let noDrivePath = filePath.slice(Math.max(pathRoot.length - 1, 0));
+			filePath = path.join(pathRoot.toUpperCase(), noDrivePath);
+		}
+
+		let fileText = document.getText();
+
+		// Return empty on empty text.
+		if (fileText === '') {
+			return [];
 		}
 
 		// Process linting arguments.
-		let lintArgs = [ "--report=json" ];
-		if (settings.standard) {
-			lintArgs.push(`--standard=${settings.standard}`);
+		let lintArgs = ['--report=json'];
+
+		// -q (quiet) option is available since phpcs 2.6.2
+		if (semver.gte(this.executableVersion, '2.6.2')) {
+			lintArgs.push('-q');
 		}
-		if (settings.ignore) {
-			lintArgs.push(`--ignore=${settings.ignore}`);
+
+		// Show sniff source codes in report output.
+		if (settings.showSources === true) {
+			lintArgs.push('-s');
 		}
-		lintArgs.push( filePath );
 
-		return new Promise<Diagnostic[]>((resolve, reject) => {
-			let command = null;
-			let args = null;
-			let phpcs = null;
+		// --encoding option is available since 1.3.0
+		if (semver.gte(this.executableVersion, '1.3.0')) {
+			lintArgs.push('--encoding=UTF-8');
+		}
 
-			let options = {
-				cwd: rootPath ? rootPath: path.dirname(filePath),
-				stdio: [ "ignore", "pipe", "pipe" ],
-				env: process.env,
-				encoding: "utf8",
-				timeout: 0,
-				maxBuffer: 1024 * 1024,
-				detached: true,
-				windowsVerbatimArguments: true,
-			};
+		// Check if a config file exists and handle it
+		let standard: string;
+		if (filePath !== undefined) {
+			const confFileNames = [
+				'.phpcs.xml', '.phpcs.xml.dist', 'phpcs.xml', 'phpcs.xml.dist',
+				'phpcs.ruleset.xml', 'ruleset.xml',
+			];
 
-			if ( /^win/.test(process.platform) ) {
-				command = process.env.comspec || "cmd.exe";
-				args = ['/s', '/c', '"', lintPath].concat(lintArgs).concat('"');
-				phpcs = cp.execFile( command, args, options );
-			} else {
-				command = lintPath;
-				args = lintArgs;
-				phpcs = cp.spawn( command, args, options );
+			const fileDir = path.dirname(filePath);
+			const confFile = await extfs.findAsync(fileDir, confFileNames);
+
+			standard = settings.autoConfigSearch && confFile
+				? confFile
+				: settings.standard;
+		} else {
+			standard = settings.standard;
+		}
+
+		if (standard) {
+			lintArgs.push(`--standard=${standard}`);
+		}
+
+		// Check if file should be ignored (Skip for in-memory documents)
+		if (filePath !== undefined && settings.ignorePatterns.length) {
+			if (semver.gte(this.executableVersion, '3.0.0')) {
+				// PHPCS v3 and up support this with STDIN files
+				lintArgs.push(`--ignore=${settings.ignorePatterns.join()}`);
+			} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
+				// We must determine this ourself for lower versions
+				return [];
 			}
+		}
 
-			let result = "";
+		lintArgs.push(`--error-severity=${settings.errorSeverity}`);
 
-			phpcs.stderr.on("data", (buffer: Buffer) => {
-				result += buffer.toString();
-			});
+		let warningSeverity = settings.warningSeverity;
+		if (settings.showWarnings === false) {
+			warningSeverity = 0;
+		}
+		lintArgs.push(`--warning-severity=${warningSeverity}`);
 
-			phpcs.stdout.on("data", (buffer: Buffer) => {
-				result += buffer.toString();
-			});
+		let text = fileText;
 
-			phpcs.on("close", (code: string) => {
-				try {
-					result = result.trim();
-					let match = null;
+		// Determine the method of setting the file name
+		if (filePath !== undefined) {
+			switch (true) {
 
-					// Determine whether we have an error and report it otherwise send back the diagnostics.
-					if (match = result.match(/^ERROR:\s?(.*)/i)) {
-						let error = match[1].trim();
-						if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
-							throw { message: `The "${match[1]}" coding standard set in your configuration is not installed. Please review your configuration an try again.` };
-						}
-						throw { message: error };
-					} else if ( match = result.match(/^FATAL\s?ERROR:\s?(.*)/i)) {
-						let error = match[1].trim();
-						if (match = error.match(/^Uncaught exception '.*' with message '(.*)'/)) {
-							throw { message: match[1] };
-						}
-						throw { message: error };
-					}
+				// PHPCS 2.6 and above support sending the filename in a flag
+				case semver.gte(this.executableVersion, '2.6.0'):
+					lintArgs.push(`--stdin-path=${filePath}`);
+					break;
 
-					let diagnostics: Diagnostic[] = [];
-					let report = JSON.parse(result);
-					for (var filename in report.files) {
-						let file: PhpcsReportFile = report.files[filename];
-						file.messages.forEach(message => {
-							diagnostics.push(makeDiagnostic(document, message));
-						});
-					}
-					resolve(diagnostics);
+				// PHPCS 2.x.x before 2.6.0 supports putting the name in the start of the stream
+				case semver.satisfies(this.executableVersion, '>=2.0.0 <2.6.0'):
+					// TODO: This needs to be document specific.
+					const eolChar = os.EOL;
+					text = `phpcs_input_file: ${filePath}${eolChar}${fileText}`;
+					break;
+
+				// PHPCS v1 supports stdin, but ignores all filenames.
+				default:
+					// Nothing to do
+					break;
+			}
+		}
+
+		// Finish off the parameter list
+		lintArgs.push('-');
+
+		const forcedKillTime = 1000 * 60 * 5; // ms * s * m: 5 minutes
+		const options = {
+			cwd: settings.workspaceRoot !== null ? settings.workspaceRoot : undefined,
+			env: process.env,
+			encoding: "utf8",
+			timeout: forcedKillTime,
+			tty: true,
+			input: text,
+		};
+
+		const phpcs = spawn.sync(this.executablePath, lintArgs, options);
+		const stdout = phpcs.stdout.toString().trim();
+		const stderr = phpcs.stderr.toString().trim();
+		let match = null;
+
+		// Determine whether we have an error in stderr.
+		if (stderr !== '') {
+			if (match = stderr.match(/^(?:PHP\s?)FATAL\s?ERROR:\s?(.*)/i)) {
+				let error = match[1].trim();
+				if (match = error.match(/^Uncaught exception '.*' with message '(.*)'/)) {
+					throw new Error(match[1]);
 				}
-				catch (e) {
-					reject(e);
+				throw new Error(error);
+			}
+			throw new Error(strings.format(SR.UnknownExecutionError, `${this.executablePath} ${lintArgs.join(' ')}`));
+		}
+
+		// Determine whether we have an error in stdout.
+		if (match = stdout.match(/^ERROR:\s?(.*)/i)) {
+			let error = match[1].trim();
+			if (match = error.match(/^the \"(.*)\" coding standard is not installed\./)) {
+				throw new Error(strings.format(SR.CodingStandardNotInstalledError, match[1]));
+			}
+			throw new Error(error);
+		}
+
+		let data = JSON.parse(stdout);
+		let messages: Array<PhpcsMessage>;
+		if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
+			const fileRealPath = extfs.realpathSync(filePath);
+			if (!data.files[fileRealPath]) {
+				return [];
+			}
+			({ messages } = data.files[fileRealPath]);
+		} else {
+			// PHPCS v1 can't associate a filename with STDIN input
+			if (!data.files.STDIN) {
+				return [];
+			}
+			({ messages } = data.files.STDIN);
+		}
+
+		let diagnostics: Diagnostic[] = [];
+		messages.map(message => diagnostics.push(
+			this.createDiagnostic(document, message, settings.showSources)
+		));
+
+		return diagnostics;
+	}
+
+	private createDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources: boolean): Diagnostic {
+
+		let lines = document.getText().split("\n");
+		let line = entry.line - 1;
+		let lineString = lines[line];
+
+		// Process diagnostic start and end characters.
+		let startCharacter = entry.column - 1;
+		let endCharacter = entry.column;
+		let charCode = lineString.charCodeAt(startCharacter);
+		if (CharCode.isWhiteSpace(charCode)) {
+			for (let i = startCharacter + 1, len = lineString.length; i < len; i++) {
+				charCode = lineString.charCodeAt(i);
+				if (!CharCode.isWhiteSpace(charCode)) {
+					break;
 				}
-			});
-		});
+				endCharacter = i;
+			}
+		} else if (CharCode.isAlphaNumeric(charCode) || CharCode.isSymbol(charCode)) {
+			// Get the whole word
+			for (let i = startCharacter + 1, len = lineString.length; i < len; i++) {
+				charCode = lineString.charCodeAt(i);
+				if (!CharCode.isAlphaNumeric(charCode) && charCode !== 95) {
+					break;
+				}
+				endCharacter++;
+			}
+			// Move backwards
+			for (let i = startCharacter, len = 0; i > len; i--) {
+				charCode = lineString.charCodeAt(i - 1);
+				if (!CharCode.isAlphaNumeric(charCode) && !CharCode.isSymbol(charCode) && charCode !== 95) {
+					break;
+				}
+				startCharacter--;
+			}
+		}
+
+		// Process diagnostic range.
+		const range: Range = Range.create(line, startCharacter, line, endCharacter);
+
+		// Process diagnostic sources.
+		let message: string = entry.message;
+		if (showSources) {
+			message += `\n(${entry.source})`;
+		}
+
+		// Process diagnostic severity.
+		let severity: DiagnosticSeverity = DiagnosticSeverity.Error;
+		if (entry.type === "WARNING") {
+			severity = DiagnosticSeverity.Warning;
+		}
+
+		return Diagnostic.create(range, message, severity, null, 'phpcs');
 	}
 }
