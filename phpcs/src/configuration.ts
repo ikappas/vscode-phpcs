@@ -65,11 +65,14 @@ export class PhpcsConfiguration extends Disposable {
 			if (item.scopeUri) {
 				let resource = this.client.protocol2CodeConverter.asUri(item.scopeUri);
 				folder = workspace.getWorkspaceFolder(resource);
+			}
+
+			if (folder) {
 				if (this.folderSettings.has(folder.uri)) {
 					result.push(this.folderSettings.get(folder.uri));
 					continue;
 				}
-				config = workspace.getConfiguration('phpcs', resource);
+				config = workspace.getConfiguration('phpcs', folder.uri);
 			} else {
 				if (this.globalSettings) {
 					result.push(this.globalSettings);
@@ -94,11 +97,12 @@ export class PhpcsConfiguration extends Disposable {
 
 			settings = await this.resolveExecutablePath(settings);
 
-			if (item.scopeUri) {
+			if (folder) {
 				this.folderSettings.set(folder.uri, settings);
 			} else {
 				this.globalSettings = settings;
 			}
+
 			result.push(settings);
 		}
 		return result;
