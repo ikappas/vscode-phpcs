@@ -10,6 +10,7 @@ import * as strings from "./base/common/strings";
 import {
 	ClientCapabilities,
 	createConnection,
+	Diagnostic,
 	DidChangeConfigurationParams,
 	DidChangeWatchedFilesParams,
 	Files,
@@ -264,15 +265,17 @@ class PhpcsServer {
 		if (this.validating.has(uri) === false) {
 			let settings = await this.getDocumentSettings(document);
 			if (settings.enable) {
+				let diagnostics: Diagnostic[] = [];
 				this.sendStartValidationNotification(document);
-				let phpcs = await PhpcsLinter.create(settings.executablePath);
-				let diagnostics = await phpcs.lint(document, settings).catch((error) => {
-					this.sendEndValidationNotification(document);
+				try {
+					const phpcs = await PhpcsLinter.create(settings.executablePath);
+					diagnostics = await phpcs.lint(document, settings);
+				} catch(error) {
 					throw new Error(this.getExceptionMessage(error, document));
-				});
-
-				this.sendEndValidationNotification(document);
-				this.sendDiagnostics({ uri, diagnostics });
+				} finally {
+					this.sendEndValidationNotification(document);
+					this.sendDiagnostics({ uri, diagnostics });
+				}
 			}
 		}
 	}
