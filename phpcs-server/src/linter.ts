@@ -201,7 +201,8 @@ export class PhpcsLinter {
 			throw new Error(error);
 		}
 
-		let data = JSON.parse(stdout);
+		const data = this.parseData(stdout);
+
 		let messages: Array<PhpcsMessage>;
 		if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
 			const fileRealPath = extfs.realpathSync(filePath);
@@ -223,6 +224,14 @@ export class PhpcsLinter {
 		));
 
 		return diagnostics;
+	}
+
+	private parseData(text: string) {
+		try {
+			return JSON.parse(text) as { files: any };
+		} catch (error) {
+			throw new Error(SR.InvalidJsonStringError);
+		}
 	}
 
 	private createDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources: boolean): Diagnostic {
