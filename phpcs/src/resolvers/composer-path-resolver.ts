@@ -25,13 +25,10 @@ export class ComposerPhpcsPathResolver extends PhpcsPathResolverBase {
 	 */
 	constructor(workspaceRoot: string, workingPath?: string) {
 		super();
-
 		this._workspaceRoot = workspaceRoot;
-
-		if (!path.isAbsolute(workingPath)) {
-			workingPath = path.join(workspaceRoot, workingPath);
-		}
-		this._workingPath = workingPath;
+		this._workingPath = path.isAbsolute(workingPath)
+			? workingPath
+			: path.join(workspaceRoot, workingPath).replace(/composer.json$/, '');
 	}
 
 	public get workspaceRoot(): string {
