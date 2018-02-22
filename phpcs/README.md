@@ -215,6 +215,16 @@ This setting controls whether the trace server is activated. Possible values you
 
 This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
+## Diagnosing common errors
+
+### The phpcs report contains invalid json
+
+This error occurs when something goes wrong in phpcs execution such as PHP Notices, PHP Fatal Exceptions, Other Script Output, etc, most of which can be detected as follows:
+
+Execute the phpcs command in your terminal with --report=json and see whether the output contains anything other than valid json.
+
+> **NOTE:** The '-q' parameter is automatically passed on phpcs v.2.6.2 and above to suppress such errors. Please update `phpcs` to a version >=2.6.2.
+
 ## Acknowledgements
 
 The extension architecture is based off of the [Language Server Node Example](https://github.com/Microsoft/vscode-languageserver-node-example).
