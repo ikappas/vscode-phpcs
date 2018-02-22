@@ -1,7 +1,7 @@
 {
   "name": "phpcs-server",
   "description": "PHP Code Sniffer server.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "Ioannis Kappas",
   "publisher": "ikappas",
   "license": "MIT",
