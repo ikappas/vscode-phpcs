@@ -61,6 +61,8 @@ export class PhpcsLinter {
 
 	public async lint(document: TextDocument, settings: PhpcsSettings): Promise<Diagnostic[]> {
 
+		const { workspaceRoot } = settings;
+
 		// Process linting paths.
 		let filePath = Files.uriToFilePath(document.uri);
 
@@ -98,14 +100,14 @@ export class PhpcsLinter {
 
 		// Check if a config file exists and handle it
 		let standard: string;
-		if (filePath !== undefined) {
+		if (workspaceRoot !== null && filePath !== undefined) {
 			const confFileNames = [
 				'.phpcs.xml', '.phpcs.xml.dist', 'phpcs.xml', 'phpcs.xml.dist',
 				'phpcs.ruleset.xml', 'ruleset.xml',
 			];
 
-			const fileDir = path.dirname(filePath);
-			const confFile = await extfs.findAsync(fileDir, confFileNames);
+			const fileDir = path.relative(workspaceRoot, path.dirname(filePath));
+			const confFile = await extfs.findAsync(workspaceRoot, fileDir, confFileNames);
 
 			standard = settings.autoConfigSearch && confFile
 				? confFile
@@ -167,7 +169,7 @@ export class PhpcsLinter {
 
 		const forcedKillTime = 1000 * 60 * 5; // ms * s * m: 5 minutes
 		const options = {
-			cwd: settings.workspaceRoot !== null ? settings.workspaceRoot : undefined,
+			cwd: workspaceRoot !== null ? workspaceRoot : undefined,
 			env: process.env,
 			encoding: "utf8",
 			timeout: forcedKillTime,
