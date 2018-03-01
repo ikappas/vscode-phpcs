@@ -100,18 +100,19 @@ export class PhpcsLinter {
 
 		// Check if a config file exists and handle it
 		let standard: string;
-		if (workspaceRoot !== null && filePath !== undefined) {
+		if (settings.autoConfigSearch && workspaceRoot !== null && filePath !== undefined) {
 			const confFileNames = [
 				'.phpcs.xml', '.phpcs.xml.dist', 'phpcs.xml', 'phpcs.xml.dist',
 				'phpcs.ruleset.xml', 'ruleset.xml',
 			];
 
 			const fileDir = path.relative(workspaceRoot, path.dirname(filePath));
-			const confFile = await extfs.findAsync(workspaceRoot, fileDir, confFileNames);
 
-			standard = settings.autoConfigSearch && confFile
-				? confFile
-				: settings.standard;
+			const confFile = !settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))
+				? await extfs.findAsync(workspaceRoot, fileDir, confFileNames)
+				: null;
+
+			standard = confFile || settings.standard;
 		} else {
 			standard = settings.standard;
 		}
