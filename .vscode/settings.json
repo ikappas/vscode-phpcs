@@ -26,6 +26,7 @@
 		"languageclient",
 		"languageserver",
 		"lockfile",
+		"micromatch",
 		"phpcs",
 		"pkg",
 		"pkgs",

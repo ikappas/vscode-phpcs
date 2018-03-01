@@ -5,7 +5,7 @@
 "use strict";
 import * as cp from "child_process";
 import * as extfs from "./base/node/extfs";
-import * as minimatch from "minimatch";
+import * as mm from "micromatch";
 import * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
@@ -29,6 +29,7 @@ export class PhpcsLinter {
 
 	private executablePath: string;
 	private executableVersion: string;
+	private ignorePatternReplacements: Map<RegExp, string>;
 
 	private constructor(executablePath: string, executableVersion: string) {
 		this.executablePath = executablePath;
@@ -60,6 +61,8 @@ export class PhpcsLinter {
 	}
 
 	public async lint(document: TextDocument, settings: PhpcsSettings): Promise<Diagnostic[]> {
+
+		const { workspaceRoot } = settings;
 
 		// Process linting paths.
 		let filePath = Files.uriToFilePath(document.uri);
@@ -98,18 +101,19 @@ export class PhpcsLinter {
 
 		// Check if a config file exists and handle it
 		let standard: string;
-		if (filePath !== undefined) {
+		if (settings.autoConfigSearch && workspaceRoot !== null && filePath !== undefined) {
 			const confFileNames = [
 				'.phpcs.xml', '.phpcs.xml.dist', 'phpcs.xml', 'phpcs.xml.dist',
 				'phpcs.ruleset.xml', 'ruleset.xml',
 			];
 
-			const fileDir = path.dirname(filePath);
-			const confFile = await extfs.findAsync(fileDir, confFileNames);
+			const fileDir = path.relative(workspaceRoot, path.dirname(filePath));
 
-			standard = settings.autoConfigSearch && confFile
-				? confFile
-				: settings.standard;
+			const confFile = !settings.ignorePatterns.some(pattern => this.isIgnorePatternMatch(filePath, pattern))
+				? await extfs.findAsync(workspaceRoot, fileDir, confFileNames)
+				: null;
+
+			standard = confFile || settings.standard;
 		} else {
 			standard = settings.standard;
 		}
@@ -123,7 +127,7 @@ export class PhpcsLinter {
 			if (semver.gte(this.executableVersion, '3.0.0')) {
 				// PHPCS v3 and up support this with STDIN files
 				lintArgs.push(`--ignore=${settings.ignorePatterns.join()}`);
-			} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
+			} else if (settings.ignorePatterns.some(pattern => this.isIgnorePatternMatch(filePath, pattern))) {
 				// We must determine this ourself for lower versions
 				return [];
 			}
@@ -167,7 +171,7 @@ export class PhpcsLinter {
 
 		const forcedKillTime = 1000 * 60 * 5; // ms * s * m: 5 minutes
 		const options = {
-			cwd: settings.workspaceRoot !== null ? settings.workspaceRoot : undefined,
+			cwd: workspaceRoot !== null ? workspaceRoot : undefined,
 			env: process.env,
 			encoding: "utf8",
 			timeout: forcedKillTime,
@@ -287,5 +291,23 @@ export class PhpcsLinter {
 		}
 
 		return Diagnostic.create(range, message, severity, null, 'phpcs');
+	}
+
+	protected getIgnorePatternReplacements(): Map<RegExp, string> {
+		if (!this.ignorePatternReplacements) {
+			this.ignorePatternReplacements = new Map([
+				[/^\*\//, '**/'], // */some/path => **/some/path
+				[/\/\*$/, '/**'], // some/path/* => some/path/**
+				[/\/\*\//g, '/**/'], // some/*/path => some/**/path
+			]);
+		}
+		return this.ignorePatternReplacements;
+	}
+
+	protected isIgnorePatternMatch(path: string, pattern: string): boolean {
+		for (let [searchValue, replaceValue] of this.getIgnorePatternReplacements()) {
+			pattern = pattern.replace(searchValue, replaceValue);
+		}
+		return mm.isMatch(path, pattern);
 	}
 }

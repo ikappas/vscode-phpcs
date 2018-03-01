@@ -1,7 +1,7 @@
 {
   "name": "phpcs",
   "description": "PHP CodeSniffer for Visual Studio Code",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "author": "Ioannis Kappas",
   "publisher": "ikappas",
   "license": "MIT",
@@ -29,7 +29,7 @@
   "devDependencies": {
     "@types/cross-spawn": "6.0.0",
     "@types/expect": "1.20.2",
-    "@types/minimatch": "^3.0.3",
+    "@types/micromatch": "^3.1.0",
     "@types/mocha": "2.2.48",
     "@types/node": "^8.9.4",
     "@types/semver": "^5.5.0",
