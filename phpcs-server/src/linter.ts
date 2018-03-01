@@ -29,6 +29,7 @@ export class PhpcsLinter {
 
 	private executablePath: string;
 	private executableVersion: string;
+	private ignorePatternReplacements: Map<RegExp, string>;
 
 	private constructor(executablePath: string, executableVersion: string) {
 		this.executablePath = executablePath;
@@ -108,7 +109,7 @@ export class PhpcsLinter {
 
 			const fileDir = path.relative(workspaceRoot, path.dirname(filePath));
 
-			const confFile = !settings.ignorePatterns.some(pattern => mm.isMatch(filePath, pattern))
+			const confFile = !settings.ignorePatterns.some(pattern => this.isIgnorePatternMatch(filePath, pattern))
 				? await extfs.findAsync(workspaceRoot, fileDir, confFileNames)
 				: null;
 
@@ -126,7 +127,7 @@ export class PhpcsLinter {
 			if (semver.gte(this.executableVersion, '3.0.0')) {
 				// PHPCS v3 and up support this with STDIN files
 				lintArgs.push(`--ignore=${settings.ignorePatterns.join()}`);
-			} else if (settings.ignorePatterns.some(pattern => mm.isMatch(filePath, pattern))) {
+			} else if (settings.ignorePatterns.some(pattern => this.isIgnorePatternMatch(filePath, pattern))) {
 				// We must determine this ourself for lower versions
 				return [];
 			}
@@ -290,5 +291,23 @@ export class PhpcsLinter {
 		}
 
 		return Diagnostic.create(range, message, severity, null, 'phpcs');
+	}
+
+	protected getIgnorePatternReplacements(): Map<RegExp, string> {
+		if (!this.ignorePatternReplacements) {
+			this.ignorePatternReplacements = new Map([
+				[/^\*\//, '**/'], // */some/path => **/some/path
+				[/\/\*$/, '/**'], // some/path/* => some/path/**
+				[/\/\*\//g, '/**/'], // some/*/path => some/**/path
+			]);
+		}
+		return this.ignorePatternReplacements;
+	}
+
+	protected isIgnorePatternMatch(path: string, pattern: string): boolean {
+		for (let [searchValue, replaceValue] of this.getIgnorePatternReplacements()) {
+			pattern = pattern.replace(searchValue, replaceValue);
+		}
+		return mm.isMatch(path, pattern);
 	}
 }
