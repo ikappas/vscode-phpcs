@@ -5,7 +5,7 @@
 "use strict";
 import * as cp from "child_process";
 import * as extfs from "./base/node/extfs";
-import * as minimatch from "minimatch";
+import * as mm from "micromatch";
 import * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
@@ -108,7 +108,7 @@ export class PhpcsLinter {
 
 			const fileDir = path.relative(workspaceRoot, path.dirname(filePath));
 
-			const confFile = !settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))
+			const confFile = !settings.ignorePatterns.some(pattern => mm.isMatch(filePath, pattern))
 				? await extfs.findAsync(workspaceRoot, fileDir, confFileNames)
 				: null;
 
@@ -126,7 +126,7 @@ export class PhpcsLinter {
 			if (semver.gte(this.executableVersion, '3.0.0')) {
 				// PHPCS v3 and up support this with STDIN files
 				lintArgs.push(`--ignore=${settings.ignorePatterns.join()}`);
-			} else if (settings.ignorePatterns.some(pattern => minimatch(filePath, pattern))) {
+			} else if (settings.ignorePatterns.some(pattern => mm.isMatch(filePath, pattern))) {
 				// We must determine this ourself for lower versions
 				return [];
 			}
