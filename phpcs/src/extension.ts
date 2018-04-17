@@ -55,7 +55,7 @@ export function activate(context: ExtensionContext) {
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
 		// Register the server for php documents
-		documentSelector: ["php"],
+		documentSelector: [{ language: "php", scheme: "file" }],
 		synchronize: {
 			// Notify the server about file changes to 'ruleset.xml' files contain in the workspace
 			fileEvents: workspace.createFileSystemWatcher("**/ruleset.xml")
