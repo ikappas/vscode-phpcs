@@ -11,6 +11,7 @@ export interface PhpcsSettings {
 	composerJsonPath: string | null;
 	standard: string | null;
 	autoConfigSearch: boolean;
+	lintWhileTyping: boolean;
 	showSources: boolean;
 	showWarnings: boolean;
 	ignorePatterns: string[];

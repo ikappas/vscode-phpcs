@@ -50,6 +50,7 @@ class PhpcsServer {
 		composerJsonPath: null,
 		standard: null,
 		autoConfigSearch: true,
+		lintWhileTyping: true,
 		showSources: false,
 		showWarnings: true,
 		ignorePatterns: [],
@@ -195,7 +196,10 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidChangeDocument({ document }: TextDocumentChangeEvent): Promise<void> {
-		await this.validateSingle(document);
+		let settings = await this.getDocumentSettings(document);
+		if (settings.lintWhileTyping) {
+			await this.validateSingle(document);
+		}
 	}
 
 	/**

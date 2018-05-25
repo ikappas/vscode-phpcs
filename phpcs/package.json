@@ -67,6 +67,12 @@
           "default": true,
           "description": "Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides custom standards defined above."
         },
+        "phpcs.lintWhileTyping": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically lint while typing. Disabling this shall make phpcs to not run live while you're typing."
+        },
         "phpcs.ignorePatterns": {
           "scope": "resource",
           "type": "array",

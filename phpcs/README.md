@@ -162,6 +162,12 @@ Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` 
 
 > **NOTE:** This option does not apply for unsaved documents (in-memory).
 
+### **phpcs.lintWhileTyping**
+
+[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+
+Run phpcs while typing interactively.
+
 ### **phpcs.ignorePatterns**
 
 [ *Scope:* All | Optional | *Type:* array | *Default:* [] ]

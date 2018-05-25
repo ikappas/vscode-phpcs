@@ -88,6 +88,7 @@ export class PhpcsConfiguration extends Disposable {
 				composerJsonPath: config.get('composerJsonPath'),
 				standard: config.get('standard'),
 				autoConfigSearch: config.get('autoConfigSearch'),
+				lintWhileTyping: config.get('lintWhileTyping'),
 				showSources: config.get('showSources'),
 				showWarnings: config.get('showWarnings'),
 				ignorePatterns: config.get('ignorePatterns'),
