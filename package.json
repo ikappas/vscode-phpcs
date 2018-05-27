@@ -13,7 +13,7 @@
     "test": "npm-run-all --parallel test:*",
     "test:server": "cd phpcs-server && npm test",
     "test:client": "cd phpcs && npm test",
-    "preinstall": "rimraf node_modules",
+    "preinstall": "npm install rimraf && rimraf node_modules",
     "postinstall": "npm-run-all --parallel postinstall:*",
     "postinstall:server": "cd phpcs-server && npm install",
     "postinstall:client": "cd phpcs && npm install",
