@@ -215,6 +215,12 @@ This setting controls whether the trace server is activated. Possible values you
 
 This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
+### **phpcs.stdin**
+
+[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+
+This setting allows you to add or remove the `phpcs --stdin-path` flag (supported only for versions 2.6.0 and above).
+
 ## Diagnosing common errors
 
 ### The phpcs report contains invalid json

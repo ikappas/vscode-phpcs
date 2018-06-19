@@ -16,4 +16,5 @@ export interface PhpcsSettings {
 	ignorePatterns: string[];
 	warningSeverity: number;
 	errorSeverity: number;
+	stdin: boolean;
 }

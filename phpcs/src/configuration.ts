@@ -93,6 +93,7 @@ export class PhpcsConfiguration extends Disposable {
 				ignorePatterns: config.get('ignorePatterns'),
 				warningSeverity: config.get('warningSeverity'),
 				errorSeverity: config.get('errorSeverity'),
+				stdin: config.get('stdin')
 			};
 
 			settings = await this.resolveExecutablePath(settings);
