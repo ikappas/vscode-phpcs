@@ -51,6 +51,8 @@ class PhpcsServer {
 		standard: null,
 		autoConfigSearch: true,
 		lintWhileTyping: true,
+		lintOnOpen: true,
+		lintOnSave: true,
 		showSources: false,
 		showWarnings: true,
 		ignorePatterns: [],
@@ -77,6 +79,15 @@ class PhpcsServer {
 		this.documents.onDidOpen(this.safeEventHandler(this.onDidOpenDocument));
 		this.documents.onDidSave(this.safeEventHandler(this.onDidSaveDocument));
 		this.documents.onDidClose(this.safeEventHandler(this.onDidCloseDocument));
+		this.connection.onNotification("lintSingleFile", this.safeEventHandler(this.lintSingleNotification));
+	}
+
+	private async lintSingleNotification(docUri: string): Promise<void> {
+		let doc = this.documents.get(docUri);
+		if (typeof doc == "undefined") {
+			doc = this.documents.get("file://"+docUri);
+		}
+		this.validateSingle(doc);
 	}
 
 	/**
@@ -134,6 +145,9 @@ class PhpcsServer {
 				...params.settings.phpcs
 			};
 		}
+
+		// when the configuration changes we only want to re-validate when we do
+		// it interactively or on open, otherwise we just wait for the next save event
 		await this.validateMany(this.documents.all());
 	}
 
@@ -154,7 +168,10 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidOpenDocument({ document }: TextDocumentChangeEvent): Promise<void> {
-		await this.validateSingle(document);
+		let settings = await this.getDocumentSettings(document);
+		if (settings.lintOnOpen) {
+			await this.validateSingle(document, settings);
+		}
 	}
 
 	/**
@@ -164,7 +181,10 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidSaveDocument({ document }: TextDocumentChangeEvent): Promise<void> {
-		await this.validateSingle(document);
+		let settings = await this.getDocumentSettings(document);
+		if (settings.lintOnSave) {
+			await this.validateSingle(document, settings);
+		}
 	}
 
 	/**
@@ -198,7 +218,7 @@ class PhpcsServer {
 	private async onDidChangeDocument({ document }: TextDocumentChangeEvent): Promise<void> {
 		let settings = await this.getDocumentSettings(document);
 		if (settings.lintWhileTyping) {
-			await this.validateSingle(document);
+			await this.validateSingle(document, settings);
 		}
 	}
 
@@ -262,12 +282,15 @@ class PhpcsServer {
 	 * Validate a single text document.
 	 *
 	 * @param document The text document to validate.
+	 * @param settings Document settings
 	 * @return void
 	 */
-	public async validateSingle(document: TextDocument): Promise<void> {
+	public async validateSingle(document: TextDocument, settings?: PhpcsSettings): Promise<void> {
 		const { uri } = document;
 		if (this.validating.has(uri) === false) {
-			let settings = await this.getDocumentSettings(document);
+			if (!settings) {
+				settings = await this.getDocumentSettings(document);
+			}
 			if (settings.enable) {
 				let diagnostics: Diagnostic[] = [];
 				this.sendStartValidationNotification(document);
