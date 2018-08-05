@@ -49,6 +49,9 @@ export function activate(context: ExtensionContext) {
 	let command = commands.registerCommand('lint', () => {
 		client.sendNotification("lintSingleFile", window.activeTextEditor.document.uri.path);
 	})
+	let command2 = commands.registerCommand('clearLint', () => {
+		client.sendNotification("clearLinterMarks", window.activeTextEditor.document.uri.path);
+	})
 
 	let middleware: ProposedFeatures.ConfigurationMiddleware | Middleware = {
 		workspace: {
@@ -96,4 +99,5 @@ export function activate(context: ExtensionContext) {
 	context.subscriptions.push(status);
 	context.subscriptions.push(config);
 	context.subscriptions.push(command);
+	context.subscriptions.push(command2);
 }

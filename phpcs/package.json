@@ -30,10 +30,16 @@
   ],
   "main": "./out/src/extension",
   "contributes": {
-    "commands": {
-      "command": "lint",
-      "title": "phpcs: Lint current file"
-    },
+    "commands": [
+      {
+        "command": "lint",
+        "title": "phpcs: Lint current file"
+      },
+      {
+        "command": "clearLint",
+        "title": "phpcs: Clear linter marks"
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "PHP CodeSniffer configuration",

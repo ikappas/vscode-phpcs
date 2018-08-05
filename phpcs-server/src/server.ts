@@ -80,6 +80,7 @@ class PhpcsServer {
 		this.documents.onDidSave(this.safeEventHandler(this.onDidSaveDocument));
 		this.documents.onDidClose(this.safeEventHandler(this.onDidCloseDocument));
 		this.connection.onNotification("lintSingleFile", this.safeEventHandler(this.lintSingleNotification));
+		this.connection.onNotification("clearLinterMarks", this.safeEventHandler(this.clearLinterMarks));
 	}
 
 	private async lintSingleNotification(docUri: string): Promise<void> {
@@ -88,6 +89,11 @@ class PhpcsServer {
 			doc = this.documents.get("file://"+docUri);
 		}
 		this.validateSingle(doc);
+	}
+
+	private async clearLinterMarks(docUri: string): Promise<void> {
+		this.clearDiagnostics(docUri);
+		this.clearDiagnostics("file://"+docUri);
 	}
 
 	/**
