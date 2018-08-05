@@ -19,7 +19,7 @@
     "url": "https://github.com/ikappas/vscode-phpcs/issues"
   },
   "categories": [
-    "Languages",
+    "Programming Languages",
     "Linters"
   ],
   "engines": {
@@ -30,6 +30,16 @@
   ],
   "main": "./out/src/extension",
   "contributes": {
+    "commands": [
+      {
+        "command": "lint",
+        "title": "phpcs: Lint current file"
+      },
+      {
+        "command": "clearLint",
+        "title": "phpcs: Clear linter marks"
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "PHP CodeSniffer configuration",
@@ -66,6 +76,36 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically search for any `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides custom standards defined above."
+        },
+        "phpcs.lintOn": {
+          "type": "object",
+          "description": "Linter events, configure when to lint",
+          "scope": "resource",
+          "default": {
+            "typing": true,
+            "open": true,
+            "save": true
+          },
+          "properties": {
+            "typing": {
+              "scope": "resource",
+              "type": "boolean",
+              "default": true,
+              "description": "Automatically lint while typing. Disabling this shall make phpcs to not run live while you're typing."
+            },
+            "open": {
+              "scope": "resource",
+              "type": "boolean",
+              "default": true,
+              "description": "Lint when opening a file."
+            },
+            "save": {
+              "scope": "resource",
+              "type": "boolean",
+              "default": true,
+              "description": "Lint when saving a file."
+            }
+          }
         },
         "phpcs.ignorePatterns": {
           "scope": "resource",

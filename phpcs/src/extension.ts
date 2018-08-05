@@ -10,7 +10,9 @@ import * as proto from "./protocol";
 import {
 	CancellationToken,
 	ExtensionContext,
-	workspace
+	workspace,
+	commands,
+	window
 } from "vscode";
 
 import {
@@ -43,6 +45,13 @@ export function activate(context: ExtensionContext) {
 		run: { module: serverModule, transport: TransportKind.ipc },
 		debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
 	};
+
+	let command = commands.registerCommand('lint', () => {
+		client.sendNotification("lintSingleFile", window.activeTextEditor.document.uri.path);
+	})
+	let command2 = commands.registerCommand('clearLint', () => {
+		client.sendNotification("clearLinterMarks", window.activeTextEditor.document.uri.path);
+	})
 
 	let middleware: ProposedFeatures.ConfigurationMiddleware | Middleware = {
 		workspace: {
@@ -89,4 +98,6 @@ export function activate(context: ExtensionContext) {
 	// client can be deactivated on extension deactivation
 	context.subscriptions.push(status);
 	context.subscriptions.push(config);
+	context.subscriptions.push(command);
+	context.subscriptions.push(command2);
 }
