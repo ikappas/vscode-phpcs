@@ -8,7 +8,9 @@
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"sourceMap": true,
-		"lib": [ "es2016" ],
+		"lib": [
+			"es2017"
+		],
 		"outDir": "../phpcs/server"
 	},
 	"exclude": [
