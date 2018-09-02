@@ -209,11 +209,16 @@ export class PhpcsLinter {
 
 		let messages: Array<PhpcsMessage>;
 		if (filePath !== undefined && semver.gte(this.executableVersion, '2.0.0')) {
-			const fileRealPath = extfs.realpathSync(filePath);
-			if (!data.files[fileRealPath]) {
+			const { files, totals } = data;
+
+			if (!totals.errors && !totals.warnings) {
 				return [];
 			}
-			({ messages } = data.files[fileRealPath]);
+
+			let file: any;
+			for (file of Object.entries(files)) {
+				({ messages } = file[1]);
+			};
 		} else {
 			// PHPCS v1 can't associate a filename with STDIN input
 			if (!data.files.STDIN) {
@@ -232,7 +237,7 @@ export class PhpcsLinter {
 
 	private parseData(text: string) {
 		try {
-			return JSON.parse(text) as { files: any };
+			return JSON.parse(text) as { files: any, totals: any };
 		} catch (error) {
 			throw new Error(SR.InvalidJsonStringError);
 		}
