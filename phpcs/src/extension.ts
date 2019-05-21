@@ -52,13 +52,26 @@ export function activate(context: ExtensionContext) {
 		}
 	};
 
+	// Notify the server about file changes to 'ruleset.xml' files contain in the workspace
+	const watchedFiles: string[] = [
+		".phpcs.xml",
+		".phpcs.xml.dist",
+		"phpcs.xml",
+		"phpcs.xml.dist",
+		"phpcs.ruleset.xml",
+		"ruleset.xml",
+	];
+
+	const fileEvents = watchedFiles.map(file => workspace.createFileSystemWatcher(`**/${file}`));
+
+	context.subscriptions.push(...fileEvents);
+
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
 		// Register the server for php documents
 		documentSelector: ["php"],
 		synchronize: {
-			// Notify the server about file changes to 'ruleset.xml' files contain in the workspace
-			fileEvents: workspace.createFileSystemWatcher("**/ruleset.xml")
+			fileEvents
 		},
 		middleware: middleware as Middleware
 	};
