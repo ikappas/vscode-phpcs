@@ -17,6 +17,10 @@ export interface DidStartValidateTextDocumentParams {
 	 * The document on which validation started.
 	 */
 	textDocument: TextDocumentIdentifier;
+	/**
+	 * Number of documents in queue
+	 */
+	buffered: number;
 }
 
 /**
@@ -35,6 +39,10 @@ export interface DidEndValidateTextDocumentParams {
 	 * The document on which validation ended.
 	 */
 	textDocument: TextDocumentIdentifier;
+	/**
+	 * Number of documents in queue
+	 */
+	buffered: number;
 }
 
 /**

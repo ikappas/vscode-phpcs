@@ -37,6 +37,7 @@ class PhpcsServer {
 	private connection: IConnection;
 	private documents: TextDocuments;
 	private validating: Map<string, TextDocument>;
+	private queue: Map<string, TextDocument>;
 
 	// Cache the settings of all open documents
 	private hasConfigurationCapability: boolean = false;
@@ -55,6 +56,10 @@ class PhpcsServer {
 		ignorePatterns: [],
 		warningSeverity: 5,
 		errorSeverity: 5,
+		lintOnOpen: true,
+		lintOnType: true,
+		lintOnSave: true,
+		queueBuffer: 10,
 	};
 	private documentSettings: Map<string, Promise<PhpcsSettings>> = new Map();
 
@@ -65,6 +70,7 @@ class PhpcsServer {
 	 */
 	constructor() {
 		this.validating = new Map();
+		this.queue = new Map();
 		this.connection = createConnection(ProposedFeatures.all, new IPCMessageReader(process), new IPCMessageWriter(process));
 		this.documents = new TextDocuments();
 		this.documents.listen(this.connection);
@@ -153,7 +159,10 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidOpenDocument({ document }: TextDocumentChangeEvent): Promise<void> {
-		await this.validateSingle(document);
+		let settings = await this.getDocumentSettings(document);
+		if (settings.lintOnOpen) {
+			await this.validateSingle(document);
+		}
 	}
 
 	/**
@@ -163,7 +172,11 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidSaveDocument({ document }: TextDocumentChangeEvent): Promise<void> {
-		await this.validateSingle(document);
+		let settings = await this.getDocumentSettings(document);
+		if (settings.lintOnSave) {
+			await this.validateSingle(document);
+			await this.freeBuffer();
+		}
 	}
 
 	/**
@@ -195,7 +208,10 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidChangeDocument({ document }: TextDocumentChangeEvent): Promise<void> {
-		await this.validateSingle(document);
+		let settings = await this.getDocumentSettings(document);
+		if (settings.lintOnType) {
+			await this.validateSingle(document);
+		}
 	}
 
 	/**
@@ -235,7 +251,10 @@ class PhpcsServer {
 		this.validating.set(document.uri, document);
 		this.connection.sendNotification(
 			proto.DidStartValidateTextDocumentNotification.type,
-			{ textDocument: TextDocumentIdentifier.create(document.uri) }
+			{
+				textDocument: TextDocumentIdentifier.create(document.uri),
+				buffered: this.queue.size
+			}
 		);
 		this.connection.tracer.log(strings.format(SR.DidStartValidateTextDocument, document.uri));
 	}
@@ -249,7 +268,10 @@ class PhpcsServer {
 		this.validating.delete(document.uri);
 		this.connection.sendNotification(
 			proto.DidEndValidateTextDocumentNotification.type,
-			{ textDocument: TextDocumentIdentifier.create(document.uri) }
+			{
+				textDocument: TextDocumentIdentifier.create(document.uri),
+				buffered: this.queue.size
+			}
 		);
 		this.connection.tracer.log(strings.format(SR.DidEndValidateTextDocument, document.uri));
 	}
@@ -262,22 +284,48 @@ class PhpcsServer {
 	 */
 	public async validateSingle(document: TextDocument): Promise<void> {
 		const { uri } = document;
+		let settings = await this.getDocumentSettings(document);
+		if (!settings.enable) {
+			return;
+		}
 		if (this.validating.has(uri) === false) {
-			let settings = await this.getDocumentSettings(document);
-			if (settings.enable) {
-				let diagnostics: Diagnostic[] = [];
-				this.sendStartValidationNotification(document);
-				try {
-					const phpcs = await PhpcsLinter.create(settings.executablePath);
-					diagnostics = await phpcs.lint(document, settings);
-				} catch(error) {
-					throw new Error(this.getExceptionMessage(error, document));
-				} finally {
-					this.sendEndValidationNotification(document);
-					this.sendDiagnostics({ uri, diagnostics });
+			let diagnostics: Diagnostic[] = [];
+			this.sendStartValidationNotification(document);
+			try {
+				const phpcs = await PhpcsLinter.create(settings.executablePath);
+				diagnostics = await phpcs.lint(document, settings);
+			} catch(error) {
+				this.sendEndValidationNotification(document);
+				throw new Error(this.getExceptionMessage(error, document));
+			} finally {
+				this.sendDiagnostics({ uri, diagnostics });
+				this.sendEndValidationNotification(document);
+			}
+		} else {
+			const inQueue: boolean = this.queue.has(uri);
+			if (inQueue) {
+				const old: TextDocument = this.queue.get(uri);
+				if (old.version < document.version) {
+					this.queue.set(document.uri, document);
 				}
+			} else if (this.queue.size < settings.queueBuffer) {
+				this.queue.set(document.uri, document);
 			}
 		}
+	}
+
+	/**
+	 * Attempt to free up buffered Documents
+	 * @return void
+	 */
+	private async freeBuffer(): Promise<void> {
+		this.queue.forEach((document, key) => {
+			if (this.validating.has(key)) {
+				return;
+			}
+			this.queue.delete(key);
+			this.validateSingle(document);
+		});
 	}
 
 	/**

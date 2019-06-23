@@ -17,19 +17,22 @@ export class PhpcsStatus {
 	private statusBarItem: StatusBarItem;
 	private documents: string[] = [];
 	private processing: number = 0;
+	private buffered: number = 0;
 	private spinnerIndex = 0;
 	private spinnerSequence: string[] = ["|", "/", "-", "\\"];
 	private timer: Timer;
 
-	public startProcessing(uri: string) {
+	public startProcessing(uri: string, buffered: number = 0) {
 		this.documents.push(uri);
 		this.processing += 1;
+		this.buffered = buffered;
 		this.getTimer().start();
 		this.getStatusBarItem().show();
 	}
 
-	public endProcessing(uri: string) {
+	public endProcessing(uri: string, buffered: number = 0) {
 		this.processing -= 1;
+		this.buffered = buffered;
 		let index = this.documents.indexOf(uri);
 		if (index !== undefined) {
 			this.documents.slice(index, 1);
@@ -46,9 +49,13 @@ export class PhpcsStatus {
 		let count = this.processing;
 		if (count > 0) {
 			let spinner = this.getNextSpinnerChar();
-			statusBar.text = count === 1 ? `$(eye) phpcs is linting 1 document ... ${spinner}` : `$(eye) phpcs is linting ${count} documents ... ${spinner}`;
-		} else {
-			statusBar.text = "";
+			statusBar.text =
+				`$(eye) phpcs is linting ${count} document`
+				+ ((count === 1) ? '' : 's')
+				+ (this.buffered > 0 ? `(${this.buffered} in buffer)` : '')
+				+ `${spinner}`;
+		} else if (this.buffered > 0) {
+			statusBar.text = `$(eye) phpcs keeps ${this.buffered} documents in buffer`;
 		}
 	}
 

@@ -76,10 +76,10 @@ export function activate(context: ExtensionContext) {
 	client.onReady().then(() => {
 		config.initialize();
 		client.onNotification(proto.DidStartValidateTextDocumentNotification.type, event => {
-			status.startProcessing(event.textDocument.uri);
+			status.startProcessing(event.textDocument.uri, event.buffered);
 		});
 		client.onNotification(proto.DidEndValidateTextDocumentNotification.type, event => {
-			status.endProcessing(event.textDocument.uri);
+			status.endProcessing(event.textDocument.uri, event.buffered);
 		});
 	});
 

@@ -93,6 +93,10 @@ export class PhpcsConfiguration extends Disposable {
 				ignorePatterns: config.get('ignorePatterns'),
 				warningSeverity: config.get('warningSeverity'),
 				errorSeverity: config.get('errorSeverity'),
+				lintOnType: config.get('lintOnType'),
+				lintOnOpen: config.get('lintOnOpen'),
+				lintOnSave: config.get('lintOnSave'),
+				queueBuffer: config.get('queueBuffer'),
 			};
 
 			settings = await this.resolveExecutablePath(settings);

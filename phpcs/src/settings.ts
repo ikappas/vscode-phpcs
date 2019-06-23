@@ -16,4 +16,8 @@ export interface PhpcsSettings {
 	ignorePatterns: string[];
 	warningSeverity: number;
 	errorSeverity: number;
+	lintOnType: boolean;
+	lintOnSave: boolean;
+	lintOnOpen: boolean;
+	queueBuffer: number;
 }
