@@ -1,7 +1,7 @@
 {
   "name": "phpcs-server",
   "description": "PHP Code Sniffer server.",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "author": "Ioannis Kappas",
   "publisher": "shevaua",
   "contributors": [
@@ -29,6 +29,7 @@
     "semver": "^5.5.0"
   },
   "scripts": {
+    "preinstall": "rimraf node_modules",
     "installServer": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json",
     "compile": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc -p .",
     "watch": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc --watch -p .",

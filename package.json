@@ -1,7 +1,7 @@
 {
   "name": "phpcs",
   "description": "PHP CodeSniffer for Visual Studio Code",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "author": "Ioannis Kappas",
   "publisher": "shevaua",
   "contributors": [
@@ -19,6 +19,7 @@
     "test": "npm-run-all --parallel test:*",
     "test:server": "cd phpcs-server && npm test",
     "test:client": "cd phpcs && npm test",
+    "preinstall": "rimraf node_modules",
     "postinstall": "npm-run-all --parallel postinstall:*",
     "postinstall:server": "cd phpcs-server && npm install",
     "postinstall:client": "cd phpcs && npm install",

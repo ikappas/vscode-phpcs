@@ -1,7 +1,7 @@
 {
   "name": "phpcs",
   "description": "PHP CodeSniffer for Visual Studio Code",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "author": "Ioannis Kappas",
   "publisher": "shevaua",
   "contributors": [
@@ -16,13 +16,13 @@
     "theme": "dark"
   },
   "icon": "phpcs_icon.png",
-  "homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
+  "homepage": "https://github.com/shevaua/vscode-phpcs/blob/master/README.md",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ikappas/vscode-phpcs.git"
+    "url": "https://github.com/shevaua/vscode-phpcs.git"
   },
   "bugs": {
-    "url": "https://github.com/ikappas/vscode-phpcs/issues"
+    "url": "https://github.com/shevaua/vscode-phpcs/issues"
   },
   "categories": [
     "Programming Languages",
@@ -151,11 +151,12 @@
     "vscode:prepublish": "tsc -p ./",
     "compile": "tsc -watch -p ./",
     "update-vscode": "node ./node_modules/vscode/bin/install",
+    "preinstall": "rimraf node_modules",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "mocha -r ts-node/register --ui tdd --timeout 10000 test/**/*.test.ts",
     "clean": "rimraf out"
   },
-  "dependencies": {
+  "devDependencies": {
     "vscode": "^1.1.10",
     "vscode-languageclient": "^3.5.0"
   }
