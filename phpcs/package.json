@@ -157,7 +157,9 @@
     "clean": "rimraf out"
   },
   "devDependencies": {
-    "vscode": "^1.1.10",
+    "vscode": "^1.1.10"
+  },
+  "dependencies": {
     "vscode-languageclient": "^3.5.0"
   }
 }
