@@ -215,6 +215,31 @@ This setting controls whether the trace server is activated. Possible values you
 
 This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
+### **phpcs.lintOnOpen**
+
+[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+
+Lint file when open it
+
+### **phpcs.lintOnSave**
+
+[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+
+Lint file when save it
+
+### **phpcs.lintOnType**
+
+[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+
+Lint on every document change. Watch out! Work with big php file may cause high CPU usage.
+
+## **phpcs.queueBuffer**
+
+[ *Scope:* All | Optional | *Type:* number | *Default:* 10 ]
+
+The number of files in the queue for linting.
+When document is linting and it has any changes, the document will be queued up or replaced in queue.
+
 ## Diagnosing common errors
 
 ### The phpcs report contains invalid json
