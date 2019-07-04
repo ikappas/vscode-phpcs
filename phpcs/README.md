@@ -102,7 +102,7 @@ The following values are applicable:
     }
     ```
 
-1. The setting can me set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
+1. The setting can be set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
 
     ```json
     {
