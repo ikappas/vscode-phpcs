@@ -1,7 +1,7 @@
 {
   "name": "phpcs",
   "description": "PHP CodeSniffer for Visual Studio Code",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "author": "Ioannis Kappas",
   "publisher": "shevaua",
   "contributors": [
@@ -83,6 +83,16 @@
           "default": [],
           "description": "An array of glob patterns to skip files and folders that match when linting your documents."
         },
+        "phpcs.ignoreSource": {
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "Source of the file"
+          },
+          "default": [],
+          "description": "An array of ignored sources. It could be file, gitfs or another file system of any extension"
+        },
         "phpcs.errorSeverity": {
           "scope": "resource",
           "type": "number",
@@ -143,11 +153,18 @@
           "type": "integer",
           "default": 10,
           "description": "Size of queued documents"
+        },
+        "phpcs.lintOnlyOpened": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Lint only opened files"
         }
       }
     }
   },
   "scripts": {
+    "build": "vsce package",
     "vscode:prepublish": "tsc -p ./",
     "compile": "tsc -watch -p ./",
     "update-vscode": "node ./node_modules/vscode/bin/install",
@@ -157,9 +174,9 @@
     "clean": "rimraf out"
   },
   "devDependencies": {
-    "vscode": "^1.1.10"
+    "vscode": "^1.1.36"
   },
   "dependencies": {
-    "vscode-languageclient": "^3.5.0"
+    "vscode-languageclient": "^5.2.1"
   }
 }

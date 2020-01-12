@@ -7,6 +7,7 @@
 export class StringResources {
 
 	static readonly DidStartValidateTextDocument: string = 'Linting started on: {0}';
+	static readonly IgnoredClosedTextDocument: string = 'Linting ignored on: {0}';
 	static readonly DidEndValidateTextDocument: string = 'Linting completed on: {0}';
 
 	static readonly ComposerDependencyNotFoundError: string = 'Composer phpcs dependency is configured but was not found under {0}. You may need to run "composer install" or set your phpcs.executablePath manually.';

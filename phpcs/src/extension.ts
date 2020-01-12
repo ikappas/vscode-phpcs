@@ -17,11 +17,14 @@ import {
 	LanguageClient,
 	LanguageClientOptions,
 	Middleware,
-	Proposed,
-	ProposedFeatures,
 	ServerOptions,
 	TransportKind
 } from "vscode-languageclient";
+
+import {
+	ConfigurationParams,
+	ConfigurationClientCapabilities
+} from 'vscode-languageserver-protocol/lib/protocol.configuration';
 
 import { PhpcsStatus } from "./status";
 import { PhpcsConfiguration } from "./configuration";
@@ -44,9 +47,9 @@ export function activate(context: ExtensionContext) {
 		debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
 	};
 
-	let middleware: ProposedFeatures.ConfigurationMiddleware | Middleware = {
+	let middleware: ConfigurationClientCapabilities | Middleware = {
 		workspace: {
-			configuration: async (params: Proposed.ConfigurationParams, token: CancellationToken, next: Function) => {
+			configuration: async (params: ConfigurationParams, token: CancellationToken, next: Function) => {
 				return config.compute(params, token, next);
 			}
 		}

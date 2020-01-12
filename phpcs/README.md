@@ -177,6 +177,20 @@ An array of glob patterns to skip files and folders that match when linting your
 }
 ```
 
+### **phpcs.ignoreSource**
+
+[ *Scope:* All | Optional | *Type:* array | *Default:* [] ]
+
+An array of ignored sources. It could be file, gitfs or another file system of any extension
+
+```json
+{
+    "phpcs.ignoreSource": [
+        "gitlens",
+    ]
+}
+```
+
 ### **phpcs.errorSeverity**
 
 [ *Scope:* All | Optional | *Type:* number | *Default:* 5 ]
@@ -239,6 +253,12 @@ Lint on every document change. Watch out! Work with big php file may cause high 
 
 The number of files in the queue for linting.
 When document is linting and it has any changes, the document will be queued up or replaced in queue.
+
+### **phpcs.lintOnlyOpened**
+
+[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+
+Lint only opened files within vscode. For better performance.
 
 ## Diagnosing common errors
 

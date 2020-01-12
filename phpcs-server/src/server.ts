@@ -19,7 +19,6 @@ import {
 	InitializeResult,
 	IPCMessageReader,
 	IPCMessageWriter,
-	Proposed,
 	ProposedFeatures,
 	PublishDiagnosticsParams,
 	TextDocument,
@@ -28,12 +27,26 @@ import {
 	TextDocuments
 } from 'vscode-languageserver';
 
+import {
+	WorkspaceFoldersChangeEvent,
+	ConfigurationItem,
+} from 'vscode-languageserver-protocol';
+
+import {
+	WorkspaceFoldersInitializeParams,
+	WorkspaceFoldersClientCapabilities
+} from 'vscode-languageserver-protocol/lib/protocol.workspaceFolders';
+
+import {
+	ConfigurationClientCapabilities
+} from 'vscode-languageserver-protocol/lib/protocol.configuration';
+
 import { PhpcsLinter } from "./linter";
 import { PhpcsSettings } from "./settings";
 import { StringResources as SR } from "./strings";
 
 class PhpcsServer {
-
+	private openedFiles: Map<string, boolean>;
 	private connection: IConnection;
 	private documents: TextDocuments;
 	private validating: Map<string, TextDocument>;
@@ -54,12 +67,14 @@ class PhpcsServer {
 		showSources: false,
 		showWarnings: true,
 		ignorePatterns: [],
+		ignoreSource: [],
 		warningSeverity: 5,
 		errorSeverity: 5,
 		lintOnOpen: true,
 		lintOnType: true,
 		lintOnSave: true,
 		queueBuffer: 10,
+		lintOnlyOpened: true,
 	};
 	private documentSettings: Map<string, Promise<PhpcsSettings>> = new Map();
 
@@ -70,6 +85,7 @@ class PhpcsServer {
 	 */
 	constructor() {
 		this.validating = new Map();
+		this.openedFiles = new Map();
 		this.queue = new Map();
 		this.connection = createConnection(ProposedFeatures.all, new IPCMessageReader(process), new IPCMessageWriter(process));
 		this.documents = new TextDocuments();
@@ -102,8 +118,8 @@ class PhpcsServer {
 	 * @param params The initialization parameters.
 	 * @return A promise of initialization result or initialization error.
 	 */
-	private async onInitialize(params: InitializeParams & Proposed.WorkspaceFoldersInitializeParams): Promise<InitializeResult> {
-		let capabilities = params.capabilities as ClientCapabilities & Proposed.WorkspaceFoldersClientCapabilities & Proposed.ConfigurationClientCapabilities;
+	private async onInitialize(params: InitializeParams & WorkspaceFoldersInitializeParams): Promise<InitializeResult> {
+		let capabilities = params.capabilities as ClientCapabilities & WorkspaceFoldersClientCapabilities & ConfigurationClientCapabilities;
 		this.hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
 		this.hasConfigurationCapability = capabilities.workspace && !!capabilities.workspace.configuration;
 		return Promise.resolve<InitializeResult>({
@@ -118,7 +134,7 @@ class PhpcsServer {
 	 */
 	private async onDidInitialize(): Promise<void> {
 		if (this.hasWorkspaceFolderCapability) {
-			(this.connection.workspace as any).onDidChangeWorkspaceFolders((_event: Proposed.WorkspaceFoldersChangeEvent) => {
+			(this.connection.workspace as any).onDidChangeWorkspaceFolders((_event: WorkspaceFoldersChangeEvent) => {
 				this.connection.tracer.log('Workspace folder change event received');
 			});
 		}
@@ -159,6 +175,7 @@ class PhpcsServer {
 	 * @return void
 	 */
 	private async onDidOpenDocument({ document }: TextDocumentChangeEvent): Promise<void> {
+		this.openedFiles.set(document.uri, true);
 		let settings = await this.getDocumentSettings(document);
 		if (settings.lintOnOpen) {
 			await this.validateSingle(document);
@@ -187,6 +204,8 @@ class PhpcsServer {
 	 */
 	private async onDidCloseDocument({ document }: TextDocumentChangeEvent): Promise<void> {
 		const uri = document.uri;
+
+		this.openedFiles.delete(uri);
 
 		// Clear cached document settings.
 		if (this.documentSettings.has(uri)) {
@@ -288,6 +307,28 @@ class PhpcsServer {
 		if (!settings.enable) {
 			return;
 		}
+
+		if (settings.lintOnlyOpened) {
+			let isOpened = this.openedFiles.has(uri);
+			if (!isOpened) {
+				this.connection.tracer.log(
+					strings.format(SR.IgnoredClosedTextDocument, uri)
+				);
+				return;
+			}
+		}
+
+		let source: string = this.getSource(uri);
+
+		if (settings.ignoreSource.length > 0) {
+			for (let key in settings.ignoreSource) {
+				let value = settings.ignoreSource[key];
+				if (value === source) {
+					return;
+				}
+			}
+		}
+
 		if (this.validating.has(uri) === false) {
 			let diagnostics: Diagnostic[] = [];
 			this.sendStartValidationNotification(document);
@@ -353,7 +394,7 @@ class PhpcsServer {
 			if (this.documentSettings.has(uri)) {
 				settings = this.documentSettings.get(uri);
 			} else {
-				const configurationItem: Proposed.ConfigurationItem = uri.match(/^untitled:/) ? {} : { scopeUri: uri };
+				const configurationItem: ConfigurationItem = uri.match(/^untitled:/) ? {} : { scopeUri: uri };
 				settings = (this.connection.workspace as any).getConfiguration(configurationItem);
 				this.documentSettings.set(uri, settings);
 			}
@@ -382,6 +423,15 @@ class PhpcsServer {
 			message = strings.format(SR.UnknownErrorWhileValidatingTextDocument, Files.uriToFilePath(document.uri));
 		}
 		return message;
+	}
+
+	private getSource(uri: string): string
+	{
+		let matches = uri.match(/^([^:]+):/);
+		if (matches.length === 2) {
+			return matches[1];
+		}
+		return '';
 	}
 }
 

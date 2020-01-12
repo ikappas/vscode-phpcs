@@ -1,7 +1,7 @@
 {
   "name": "phpcs-server",
   "description": "PHP Code Sniffer server.",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "author": "Ioannis Kappas",
   "publisher": "shevaua",
   "contributors": [
@@ -23,10 +23,10 @@
     "url": "https://github.com/ikappas/vscode-phpcs/issues"
   },
   "dependencies": {
-    "vscode-languageserver": "^3.5.0",
     "cross-spawn": "^6.0.4",
     "micromatch": "^3.1.9",
-    "semver": "^5.5.0"
+    "semver": "^5.7.1",
+    "vscode-languageserver": "^5.2.1"
   },
   "scripts": {
     "preinstall": "rimraf node_modules",

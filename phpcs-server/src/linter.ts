@@ -103,8 +103,12 @@ export class PhpcsLinter {
 		let standard: string;
 		if (settings.autoConfigSearch && workspaceRoot !== null && filePath !== undefined) {
 			const confFileNames = [
-				'.phpcs.xml', '.phpcs.xml.dist', 'phpcs.xml', 'phpcs.xml.dist',
-				'phpcs.ruleset.xml', 'ruleset.xml',
+				'.phpcs.xml',
+				'.phpcs.xml.dist',
+				'phpcs.xml',
+				'phpcs.xml.dist',
+				'phpcs.ruleset.xml',
+				'ruleset.xml',
 			];
 
 			const fileDir = path.relative(workspaceRoot, path.dirname(filePath));

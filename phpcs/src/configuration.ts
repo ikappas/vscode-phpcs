@@ -17,9 +17,12 @@ import {
 
 import {
 	DidChangeConfigurationNotification,
-	LanguageClient,
-	Proposed,
+	LanguageClient
 } from "vscode-languageclient";
+
+import {
+	ConfigurationParams
+} from 'vscode-languageserver-protocol/lib/protocol.configuration';
 
 import { PhpcsSettings } from "./settings";
 import { PhpcsPathResolver } from "./resolvers/path-resolver";
@@ -46,7 +49,7 @@ export class PhpcsConfiguration extends Disposable {
 
 	// Convert VS Code specific settings to a format acceptable by the server. Since
 	// both client and server do use JSON the conversion is trivial.
-	public async compute(params: Proposed.ConfigurationParams, _token: CancellationToken, _next: Function): Promise<any[]> {
+	public async compute(params: ConfigurationParams, _token: CancellationToken, _next: Function): Promise<any[]> {
 		if (!params.items) {
 			return null;
 		}
@@ -91,12 +94,14 @@ export class PhpcsConfiguration extends Disposable {
 				showSources: config.get('showSources'),
 				showWarnings: config.get('showWarnings'),
 				ignorePatterns: config.get('ignorePatterns'),
+				ignoreSource: config.get('ignoreSource'),
 				warningSeverity: config.get('warningSeverity'),
 				errorSeverity: config.get('errorSeverity'),
 				lintOnType: config.get('lintOnType'),
 				lintOnOpen: config.get('lintOnOpen'),
 				lintOnSave: config.get('lintOnSave'),
 				queueBuffer: config.get('queueBuffer'),
+				lintOnlyOpened: config.get('lintOnlyOpened'),
 			};
 
 			settings = await this.resolveExecutablePath(settings);

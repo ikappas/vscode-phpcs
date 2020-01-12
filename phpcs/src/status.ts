@@ -7,7 +7,8 @@
 import {
 	StatusBarAlignment,
 	StatusBarItem,
-	window
+	window,
+	OutputChannel
 } from "vscode";
 
 import { Timer } from './timer';
@@ -21,8 +22,15 @@ export class PhpcsStatus {
 	private spinnerIndex = 0;
 	private spinnerSequence: string[] = ["|", "/", "-", "\\"];
 	private timer: Timer;
+	private channel: OutputChannel;
+
+	public constructor()
+	{
+		this.channel = window.createOutputChannel('PhpCS log');
+	}
 
 	public startProcessing(uri: string, buffered: number = 0) {
+		this.channel.appendLine('> '+uri);
 		this.documents.push(uri);
 		this.processing += 1;
 		this.buffered = buffered;
@@ -92,6 +100,9 @@ export class PhpcsStatus {
 		}
 		if (this.timer) {
 			this.timer.dispose();
+		}
+		if (this.channel) {
+			this.channel.dispose();
 		}
 	}
 }

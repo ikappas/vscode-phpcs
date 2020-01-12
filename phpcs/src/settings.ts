@@ -14,10 +14,12 @@ export interface PhpcsSettings {
 	showSources: boolean;
 	showWarnings: boolean;
 	ignorePatterns: string[];
+	ignoreSource: string[];
 	warningSeverity: number;
 	errorSeverity: number;
 	lintOnType: boolean;
 	lintOnSave: boolean;
 	lintOnOpen: boolean;
 	queueBuffer: number;
+	lintOnlyOpened: boolean;
 }

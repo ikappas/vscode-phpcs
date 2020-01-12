@@ -1,7 +1,7 @@
 {
   "name": "phpcs",
   "description": "PHP CodeSniffer for Visual Studio Code",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "author": "Ioannis Kappas",
   "publisher": "shevaua",
   "contributors": [
