@@ -1,20 +1,20 @@
 {
   "name": "phpcs-server",
   "description": "PHP Code Sniffer server.",
-  "version": "1.0.5",
-  "author": "Ioannis Kappas",
-  "publisher": "ikappas",
+  "version": "1.1.0",
+  "author": "Jasmin Mistry",
+  "publisher": "jasminmistry",
   "license": "MIT",
   "engines": {
     "node": "*"
   },
-  "homepage": "https://github.com/ikappas/vscode-phpcs/blob/master/README.md",
+  "homepage": "https://github.com/jasminmistry/vscode-phpcs/blob/master/README.md",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ikappas/vscode-phpcs.git"
+    "url": "https://github.com/jasminmistry/vscode-phpcs"
   },
   "bugs": {
-    "url": "https://github.com/ikappas/vscode-phpcs/issues"
+    "url": "https://github.com/jasminmistry/vscode-phpcs/issues"
   },
   "dependencies": {
     "vscode-languageserver": "^3.5.0",
