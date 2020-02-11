@@ -149,7 +149,7 @@ export class PhpcsLinter {
 
 				// PHPCS 2.6 and above support sending the filename in a flag
 				case semver.gte(this.executableVersion, '2.6.0'):
-					lintArgs.push(`--stdin-path=${filePath}`);
+					lintArgs.push(`${filePath}`);
 					break;
 
 				// PHPCS 2.x.x before 2.6.0 supports putting the name in the start of the stream
@@ -177,6 +177,7 @@ export class PhpcsLinter {
 			timeout: forcedKillTime,
 			tty: true,
 			input: text,
+			maxBuffer: 2400000000
 		};
 
 		const phpcs = spawn.sync(this.executablePath, lintArgs, options);
