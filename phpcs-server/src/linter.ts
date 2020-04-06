@@ -121,7 +121,7 @@ export class PhpcsLinter {
 		if (standard) {
 			lintArgs.push(`--standard=${standard}`);
 		}
-
+		lintArgs.push(`--extensions=${settings.extensions.join(',')}`);
 		// Check if file should be ignored (Skip for in-memory documents)
 		if (filePath !== undefined && settings.ignorePatterns.length) {
 			if (semver.gte(this.executableVersion, '3.0.0')) {
