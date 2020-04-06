@@ -61,6 +61,19 @@
           "default": null,
           "description": "Optional. The name or path of the coding standard to use. Defaults to the one set in phpcs global config."
         },
+        "phpcs.extensions": {
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "title": "Valid extension to check"
+          },
+          "default": [
+            "php",
+            "inc"
+          ],
+          "description": "An array of valid file extensions that contain PHP code to lint"
+        },
         "phpcs.autoConfigSearch": {
           "scope": "resource",
           "type": "boolean",
@@ -129,5 +142,10 @@
   "dependencies": {
     "vscode": "^1.1.10",
     "vscode-languageclient": "^3.5.0"
+  },
+  "__metadata": {
+    "id": "b0a47156-9132-49a2-bebd-ed16d91b1fa6",
+    "publisherId": "bc9cf215-ec5e-4767-8196-eb73d1ced313",
+    "publisherDisplayName": "Ioannis Kappas"
   }
 }
