@@ -44,7 +44,7 @@ export class PhpcsLinter {
 
 			let result: Buffer = cp.execSync(`"${executablePath}" --version`);
 
-			const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
+			const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/im;
 			const versionMatches = result.toString().match(versionPattern);
 
 			if (versionMatches === null) {
