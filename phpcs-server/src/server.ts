@@ -232,7 +232,6 @@ class PhpcsServer {
 	 * @param document The text document on which validation started.
 	 */
 	private sendStartValidationNotification(document: TextDocument): void {
-		this.validating.set(document.uri, document);
 		this.connection.sendNotification(
 			proto.DidStartValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create(document.uri) }
@@ -246,7 +245,6 @@ class PhpcsServer {
 	 * @param document The text document on which validation ended.
 	 */
 	private sendEndValidationNotification(document: TextDocument): void {
-		this.validating.delete(document.uri);
 		this.connection.sendNotification(
 			proto.DidEndValidateTextDocumentNotification.type,
 			{ textDocument: TextDocumentIdentifier.create(document.uri) }
@@ -263,6 +261,7 @@ class PhpcsServer {
 	public async validateSingle(document: TextDocument): Promise<void> {
 		const { uri } = document;
 		if (this.validating.has(uri) === false) {
+			this.validating.set(uri, document);
 			let settings = await this.getDocumentSettings(document);
 			if (settings.enable) {
 				let diagnostics: Diagnostic[] = [];
@@ -273,9 +272,12 @@ class PhpcsServer {
 				} catch(error) {
 					throw new Error(this.getExceptionMessage(error, document));
 				} finally {
+					this.validating.delete(uri);
 					this.sendEndValidationNotification(document);
 					this.sendDiagnostics({ uri, diagnostics });
 				}
+			} else {
+				this.validating.delete(uri);
 			}
 		}
 	}
