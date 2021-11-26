@@ -25,11 +25,22 @@ import { StringResources as SR } from "./strings";
 import { PhpcsSettings } from "./settings";
 import { PhpcsMessage } from "./message";
 
+// PHPCS version cached data
+const CACHED_PHPCS_VERSION_TTL = 300000; // 5 min
+let phpcsCachedVersion: {
+	executableVersion: string|null,
+	lastChecked: Date|null
+} = {
+	executableVersion: null,
+	lastChecked: null
+};
+
 export class PhpcsLinter {
 
 	private executablePath: string;
 	private executableVersion: string;
 	private ignorePatternReplacements: Map<RegExp, string>;
+	private documentLines: string[] | undefined;
 
 	private constructor(executablePath: string, executableVersion: string) {
 		this.executablePath = executablePath;
@@ -42,17 +53,22 @@ export class PhpcsLinter {
 	static async create(executablePath: string): Promise<PhpcsLinter> {
 		try {
 
-			let result: Buffer = cp.execSync(`"${executablePath}" --version`);
+			const now = new Date();
+			if (phpcsCachedVersion.lastChecked === null || now.getTime() - phpcsCachedVersion.lastChecked.getTime() > CACHED_PHPCS_VERSION_TTL)
+			{
+				let result: Buffer = cp.execSync(`"${executablePath}" --version`);
 
-			const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
-			const versionMatches = result.toString().match(versionPattern);
+				const versionPattern: RegExp = /^PHP_CodeSniffer version (\d+\.\d+\.\d+)/i;
+				const versionMatches = result.toString().match(versionPattern);
 
-			if (versionMatches === null) {
-				throw new Error(SR.InvalidVersionStringError);
+				if (versionMatches === null) {
+					throw new Error(SR.InvalidVersionStringError);
+				}
+
+				phpcsCachedVersion.executableVersion = versionMatches[1];
+				phpcsCachedVersion.lastChecked = now;
 			}
-
-			const executableVersion = versionMatches[1];
-			return new PhpcsLinter(executablePath, executableVersion);
+			return new PhpcsLinter(executablePath, phpcsCachedVersion.executableVersion);
 
 		} catch (error) {
 			let message = error.message ? error.message : SR.CreateLinterErrorDefaultMessage;
@@ -223,9 +239,16 @@ export class PhpcsLinter {
 		}
 
 		let diagnostics: Diagnostic[] = [];
-		messages.map(message => diagnostics.push(
-			this.createDiagnostic(document, message, settings.showSources)
-		));
+		if (messages.length > 0)
+		{
+			// Update document lines
+			this.documentLines = fileText.split("\n");
+			messages.map(message => diagnostics.push(
+				this.createDiagnostic(document, message, settings.showSources)
+			));
+			// Clear document lines
+			this.documentLines = undefined;
+		}
 
 		return diagnostics;
 	}
@@ -240,9 +263,8 @@ export class PhpcsLinter {
 
 	private createDiagnostic(document: TextDocument, entry: PhpcsMessage, showSources: boolean): Diagnostic {
 
-		let lines = document.getText().split("\n");
 		let line = entry.line - 1;
-		let lineString = lines[line];
+		let lineString = this.documentLines[line];
 
 		// Process diagnostic start and end characters.
 		let startCharacter = entry.column - 1;

@@ -66,7 +66,7 @@ export class PhpcsStatus {
 			this.timer = new Timer(() => {
 				this.updateStatusText();
 			});
-			this.timer.interval = 100;
+			this.timer.interval = 250;
 		}
 		return this.timer;
 	}
