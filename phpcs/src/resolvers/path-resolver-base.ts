@@ -12,5 +12,5 @@ export abstract class PhpcsPathResolverBase {
 		this.phpcsExecutableFile = `phpcs${extension}`;
 	}
 
-	abstract async resolve(): Promise<string>;
+	abstract resolve(): Promise<string>;
 }
