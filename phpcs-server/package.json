@@ -23,7 +23,6 @@
     "semver": "^5.5.0"
   },
   "scripts": {
-    "preinstall": "rimraf node_modules",
     "installServer": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json",
     "compile": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc -p .",
     "watch": "installServerIntoExtension ../phpcs ./package.json ./tsconfig.json && tsc --watch -p .",
