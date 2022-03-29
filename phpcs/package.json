@@ -127,6 +127,6 @@
     "vscode-languageclient": "^3.5.0"
   },
   "devDependencies": {
-    "@types/vscode": "^1.65.0"
+    "@types/vscode": "^1.20.0"
   }
 }
