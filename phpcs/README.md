@@ -102,7 +102,7 @@ The following values are applicable:
     }
     ```
 
-1. The setting can me set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
+1. The setting can be set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcs`.
 
     ```json
     {
@@ -221,7 +221,7 @@ This setting allows you to override the path to your composer.json file when it 
 
 This error occurs when something goes wrong in phpcs execution such as PHP Notices, PHP Fatal Exceptions, Other Script Output, etc, most of which can be detected as follows:
 
-Execute the phpcs command in your terminal with --report=json and see whether the output contains anything other than valid json.
+Execute the phpcs command in your terminal with `--report=json` and see whether the output contains anything other than valid json.
 
 > **NOTE:** The '-q' parameter is automatically passed on phpcs v.2.6.2 and above to suppress such errors. Please update `phpcs` to a version >=2.6.2.
 
