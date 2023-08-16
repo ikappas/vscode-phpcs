@@ -132,7 +132,10 @@ export class PhpcsLinter {
 				return [];
 			}
 		}
-
+		
+		// Check for Drupal and PHP related files.
+		lintArgs.push('--extensions=inc,install,module,php,profile,theme');
+		
 		lintArgs.push(`--error-severity=${settings.errorSeverity}`);
 
 		let warningSeverity = settings.warningSeverity;
